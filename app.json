@@ -1,25 +1,27 @@
 {
   "expo": {
-    "name": "DiffAndroid",
-    "slug": "DiffAndroid",
+    "name": "DiffMobile",
+    "slug": "DiffMobile",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
-    "scheme": "diffandroid",
+    "scheme": "diffmobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sergiovk.DiffMobile"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#6C63FF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.sergiovk.DiffMobile"
     },
     "web": {
       "output": "static",
@@ -33,9 +35,9 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#6C63FF",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#1A1A2E"
           }
         }
       ]
@@ -43,6 +45,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "9d02ab81-4e6d-4c40-b14e-2ff5a03b99a2"
+      }
     }
   }
 }

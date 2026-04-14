@@ -1,53 +1,81 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
-
-import { Platform } from 'react-native';
-
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
 export const Colors = {
   light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    background: '#F8F9FA',
+    surface: '#FFFFFF',
+    surfaceSecondary: '#F1F3F5',
+    primary: '#6C63FF',
+    primaryLight: '#8B85FF',
+    primaryDark: '#5A52E0',
+    text: '#1A1A2E',
+    textSecondary: '#6C757D',
+    textLight: '#ADB5BD',
+    border: '#DEE2E6',
+    borderLight: '#E9ECEF',
+    added: '#D4EDDA',
+    addedText: '#155724',
+    addedBorder: '#28A745',
+    removed: '#F8D7DA',
+    removedText: '#721C24',
+    removedBorder: '#DC3545',
+    modified: '#FFF3CD',
+    modifiedText: '#856404',
+    modifiedBorder: '#FFC107',
+    charAdded: '#C3E6CB',
+    charRemoved: '#F5C6CB',
+    shadow: 'rgba(0, 0, 0, 0.08)',
+    overlay: 'rgba(0, 0, 0, 0.3)',
+    error: '#DC3545',
+    success: '#28A745',
+    warning: '#FFC107',
   },
   dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    background: '#0D1117',
+    surface: '#161B22',
+    surfaceSecondary: '#21262D',
+    primary: '#7C73FF',
+    primaryLight: '#9B95FF',
+    primaryDark: '#6C63FF',
+    text: '#E6EDF3',
+    textSecondary: '#8B949E',
+    textLight: '#484F58',
+    border: '#30363D',
+    borderLight: '#21262D',
+    added: '#1A3A2A',
+    addedText: '#7EE787',
+    addedBorder: '#28A745',
+    removed: '#3A1A1A',
+    removedText: '#FF7B72',
+    removedBorder: '#DC3545',
+    modified: '#3A3000',
+    modifiedText: '#E3B341',
+    modifiedBorder: '#FFC107',
+    charAdded: '#264F36',
+    charRemoved: '#4D2020',
+    shadow: 'rgba(0, 0, 0, 0.3)',
+    overlay: 'rgba(0, 0, 0, 0.5)',
+    error: '#F85149',
+    success: '#7EE787',
+    warning: '#E3B341',
   },
 };
 
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
+export const FontSizes = {
+  small: 12,
+  medium: 14,
+  large: 16,
+};
+
+export const Spacing = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+};
+
+export const BorderRadius = {
+  sm: 6,
+  md: 10,
+  lg: 16,
+  xl: 24,
+};

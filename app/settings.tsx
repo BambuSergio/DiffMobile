@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  Linking,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -57,6 +58,10 @@ export default function SettingsScreen() {
         },
       ]
     );
+  };
+
+  const handleOpenGitHub = () => {
+    Linking.openURL('https://github.com/BambuSergio/DiffMobile');
   };
 
   const renderSection = (title: string, children: React.ReactNode) => (
@@ -277,6 +282,15 @@ export default function SettingsScreen() {
               );
             }
           )}
+          <View style={styles.githubButtonContainer}>
+            <TouchableOpacity
+              style={[styles.githubButton, { backgroundColor: isDark ? '#FFFFFF' : '#24292E' }]}
+              onPress={handleOpenGitHub}
+              activeOpacity={0.7}
+            >
+              <Ionicons name="logo-github" size={28} color={isDark ? '#24292E' : '#FFFFFF'} />
+            </TouchableOpacity>
+          </View>
         </>
       )}
 
@@ -373,5 +387,16 @@ const styles = StyleSheet.create({
   resetButtonText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  githubButtonContainer: {
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
+  },
+  githubButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

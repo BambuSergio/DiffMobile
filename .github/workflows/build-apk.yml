@@ -1,0 +1,65 @@
+name: Compilar APK de Android
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: 
+
+# IMPORTANTE: Le damos permiso al bot de GitHub para crear "Releases"
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar el repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependencias
+        run: npm install
+
+      - name: Configurar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Generar código nativo de Android
+        run: npx expo prebuild
+
+      - name: Compilar APK
+        run: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew assembleRelease
+
+      - name: Obtener versión del proyecto
+        run: echo "APP_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_ENV
+
+      - name: Renombrar APK
+        run: |
+          mv android/app/build/outputs/apk/release/app-release.apk "android/app/build/outputs/apk/release/DiffMobile ${{ env.APP_VERSION }}.apk"
+
+      # Mantenemos esto por si acaso quieres el ZIP tradicional en la pestaña Actions
+      - name: Subir como Artefacto (ZIP)
+        uses: actions/upload-artifact@v4
+        with:
+          name: DiffMobile ${{ env.APP_VERSION }}
+          path: "android/app/build/outputs/apk/release/DiffMobile ${{ env.APP_VERSION }}.apk"
+
+      # NUEVO: Publica el APK suelto en la sección de "Releases" de tu repositorio
+      - name: Publicar en GitHub Releases (Descarga Directa)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.APP_VERSION }}-build${{ github.run_number }}
+          name: "DiffMobile ${{ env.APP_VERSION }}"
+          files: "android/app/build/outputs/apk/release/DiffMobile ${{ env.APP_VERSION }}.apk"

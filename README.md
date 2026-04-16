@@ -33,9 +33,7 @@ A mobile text/file diff comparison application built with React Native and Expo.
 
 ### Installation
 
-```bash
-npm install
-```
+Go to the [GitHub releases page](https://github.com/BambuSergio/DiffMobile/releases).
 
 ### Running the App
 

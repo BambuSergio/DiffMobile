@@ -40,9 +40,6 @@ Go to the [GitHub releases page](https://github.com/BambuSergio/DiffMobile/relea
 ```bash
 # Start Expo dev server
 npx expo start
-
-# Run on Android
-npx expo start --android
 ```
 
 ## Project Structure

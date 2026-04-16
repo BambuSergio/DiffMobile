@@ -41,9 +41,6 @@ Ir a la [página de lanzamientos de GitHub](https://github.com/BambuSergio/DiffM
 ```bash
 # Iniciar servidor de desarrollo Expo
 npx expo start
-
-# Ejecutar en Android
-npx expo start --android
 ```
 
 ## Estructura del Proyecto

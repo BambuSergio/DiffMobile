@@ -260,11 +260,6 @@ export default function SettingsScreen() {
         t('settings.about'),
         <>
           {renderSetting(
-            'information-circle-outline',
-            t('settings.version'),
-            '1.0.0'
-          )}
-          {renderSetting(
             'code-slash-outline',
             'DiffMobile',
             t('settings.description')

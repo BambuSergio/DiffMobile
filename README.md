@@ -43,10 +43,12 @@ npx expo start
 
 # Run on Android
 npx expo start --android
+```
 
 ## Project Structure
 
 ```
+
 DiffMobile/
 ├── app/                    # Expo Router screens
 │   ├── _layout.tsx         # Root layout with navigation

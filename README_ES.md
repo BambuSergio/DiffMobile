@@ -44,6 +44,7 @@ npx expo start
 
 # Ejecutar en Android
 npx expo start --android
+```
 
 ## Estructura del Proyecto
 

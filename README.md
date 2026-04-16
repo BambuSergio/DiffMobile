@@ -23,17 +23,17 @@ A mobile text/file diff comparison application built with React Native and Expo.
   - Text size (Small/Medium/Large)
   - Diff options (ignore whitespace, case, empty lines)
 
-## Getting Started
+## Installation
+
+Go to the [GitHub releases page](https://github.com/BambuSergio/DiffMobile/releases).
+
+## Testing the app with Expo without installing it
 
 ### Prerequisites
 
 - Node.js
 - Expo CLI (`npx expo`)
 - Android emulator or physical device with Expo Go app
-
-### Installation
-
-Go to the [GitHub releases page](https://github.com/BambuSergio/DiffMobile/releases).
 
 ### Running the App
 
@@ -43,10 +43,6 @@ npx expo start
 
 # Run on Android
 npx expo start --android
-
-# Run on iOS
-npx expo start --ios
-```
 
 ## Project Structure
 

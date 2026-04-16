@@ -23,19 +23,18 @@ Una aplicación móvil para comparación y diferencia de textos/archivos, constr
   - Tamaño de texto (Pequeño/Mediano/Grande)
   - Opciones de diff (ignorar espacios en blanco, mayúsculas/minúsculas, líneas vacías)
 
-## Primeros Pasos
+## Instalación
+
+Ir a la [página de lanzamientos de GitHub](https://github.com/BambuSergio/DiffMobile/releases).
+
+
+## Probándo app con Expo sin instalarla
 
 ### Requisitos Previos
 
 - Node.js
 - Expo CLI (`npx expo`)
 - Emulador Android o dispositivo físico con la app Expo Go
-
-### Instalación
-
-```bash
-npm install
-```
 
 ### Ejecutar la Aplicación
 
@@ -45,10 +44,6 @@ npx expo start
 
 # Ejecutar en Android
 npx expo start --android
-
-# Ejecutar en iOS
-npx expo start --ios
-```
 
 ## Estructura del Proyecto
 

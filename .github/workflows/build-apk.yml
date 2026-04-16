@@ -4,7 +4,13 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch: 
+    # AQUÍ ESTÁ LA MAGIA:
+    paths-ignore:
+      - 'README.md'      # Ignora si solo cambias este archivo exacto
+      - '**/*.md'        # Ignora si cambias cualquier archivo Markdown del proyecto
+      - '.gitignore'     # Ignora si cambias el gitignore
+      - 'LICENSE'        # Ignora si cambias la licencia
+  workflow_dispatch:
 
 # IMPORTANTE: Le damos permiso al bot de GitHub para crear "Releases"
 permissions:

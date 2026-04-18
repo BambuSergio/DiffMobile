@@ -1,7 +1,7 @@
 {
   "name": "diffmobile",
   "main": "expo-router/entry",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "android": {
     "package": "com.bambusergio.diffmobile",
     "versionCode": 1

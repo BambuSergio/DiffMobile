@@ -9,6 +9,8 @@ import {
   ScrollView,
   Alert,
   Animated,
+  Keyboard,
+  Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -55,9 +57,24 @@ export default function CompareScreen() {
 
   const [showResult, setShowResult] = useState(false);
   const [activeInput, setActiveInput] = useState<'original' | 'modified' | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const flashAnim = useRef(new Animated.Value(0)).current;
   const flashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const fontSize = FontSizes[fontSizeMode];
 
@@ -230,127 +247,140 @@ export default function CompareScreen() {
       </View>
 
       {!showResult ? (
-        <ScrollView style={styles.inputContainer} keyboardShouldPersistTaps="handled">
-          {/* Original Text */}
-          <View style={styles.inputSection}>
-            <View style={styles.inputHeader}>
-              <View style={[styles.inputBadge, { backgroundColor: themeColors.removedBorder }]}>
-                <Text style={styles.inputBadgeText}>A</Text>
-              </View>
-              <Text style={[styles.inputTitle, { color: themeColors.text }]}>{t('compare.originalTitle')}</Text>
-              <View style={{ flexDirection: 'row', gap: Spacing.xs, alignItems: 'center' }}>
+        <View style={{ flex: 1 }}>
+          <ScrollView
+            style={styles.inputContainer}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Original Text */}
+            <View style={styles.inputSection}>
+              <View style={styles.inputHeader}>
+                <View style={[styles.inputBadge, { backgroundColor: themeColors.removedBorder }]}>
+                  <Text style={styles.inputBadgeText}>A</Text>
+                </View>
+                <Text style={[styles.inputTitle, { color: themeColors.text }]}>{t('compare.originalTitle')}</Text>
+                <View style={{ flexDirection: 'row', gap: Spacing.xs, alignItems: 'center' }}>
+                  <TouchableOpacity
+                    style={[styles.undoButton, { backgroundColor: themeColors.surfaceSecondary, borderColor: themeColors.border, opacity: canUndoOriginal ? 1 : 0.4 }]}
+                    onPress={undoOriginal}
+                    disabled={!canUndoOriginal}
+                  >
+                    <Ionicons name="arrow-undo" size={16} color={canUndoOriginal ? themeColors.primary : themeColors.textLight} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.undoButton, { backgroundColor: themeColors.surfaceSecondary, borderColor: themeColors.border, opacity: canRedoOriginal ? 1 : 0.4 }]}
+                    onPress={redoOriginal}
+                    disabled={!canRedoOriginal}
+                  >
+                    <Ionicons name="arrow-redo" size={16} color={canRedoOriginal ? themeColors.primary : themeColors.textLight} />
+                  </TouchableOpacity>
+                </View>
                 <TouchableOpacity
-                  style={[styles.undoButton, { backgroundColor: themeColors.surfaceSecondary, borderColor: themeColors.border, opacity: canUndoOriginal ? 1 : 0.4 }]}
-                  onPress={undoOriginal}
-                  disabled={!canUndoOriginal}
+                  style={[styles.pasteButton, { backgroundColor: themeColors.primary }]}
+                  onPress={async () => {
+                    const content = await Clipboard.getStringAsync();
+                    setOriginalText(content);
+                  }}
                 >
-                  <Ionicons name="arrow-undo" size={16} color={canUndoOriginal ? themeColors.primary : themeColors.textLight} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.undoButton, { backgroundColor: themeColors.surfaceSecondary, borderColor: themeColors.border, opacity: canRedoOriginal ? 1 : 0.4 }]}
-                  onPress={redoOriginal}
-                  disabled={!canRedoOriginal}
-                >
-                  <Ionicons name="arrow-redo" size={16} color={canRedoOriginal ? themeColors.primary : themeColors.textLight} />
+                  <Ionicons name="clipboard-outline" size={16} color="#FFFFFF" />
+                  <Text style={styles.pasteButtonText}>{t('compare.pasteText')}</Text>
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                style={[styles.pasteButton, { backgroundColor: themeColors.primary }]}
-                onPress={async () => {
-                  const content = await Clipboard.getStringAsync();
-                  setOriginalText(content);
-                }}
-              >
-                <Ionicons name="clipboard-outline" size={16} color="#FFFFFF" />
-                <Text style={styles.pasteButtonText}>{t('compare.pasteText')}</Text>
-              </TouchableOpacity>
+              <TextInput
+                style={[
+                  styles.textInput,
+                  {
+                    backgroundColor: themeColors.surface,
+                    color: themeColors.text,
+                    borderColor: activeInput === 'original' ? themeColors.primary : themeColors.border,
+                    fontSize,
+                    minHeight: 150,
+                  },
+                ]}
+                value={originalText}
+                onChangeText={setOriginalText}
+                placeholder={t('compare.placeholderOriginal')}
+                placeholderTextColor={themeColors.textLight}
+                multiline
+                textAlignVertical="top"
+                onFocus={() => setActiveInput('original')}
+              />
             </View>
-            <TextInput
-              style={[
-                styles.textInput,
-                {
-                  backgroundColor: themeColors.surface,
-                  color: themeColors.text,
-                  borderColor: activeInput === 'original' ? themeColors.primary : themeColors.border,
-                  fontSize,
-                  minHeight: 150,
-                },
-              ]}
-              value={originalText}
-              onChangeText={setOriginalText}
-              placeholder={t('compare.placeholderOriginal')}
-              placeholderTextColor={themeColors.textLight}
-              multiline
-              textAlignVertical="top"
-              onFocus={() => setActiveInput('original')}
-            />
-          </View>
 
-          {/* Modified Text */}
-          <View style={styles.inputSection}>
-            <View style={styles.inputHeader}>
-              <View style={[styles.inputBadge, { backgroundColor: themeColors.addedBorder }]}>
-                <Text style={styles.inputBadgeText}>B</Text>
-              </View>
-              <Text style={[styles.inputTitle, { color: themeColors.text }]}>{t('compare.modifiedTitle')}</Text>
-              <View style={{ flexDirection: 'row', gap: Spacing.xs, alignItems: 'center' }}>
+            {/* Modified Text */}
+            <View style={styles.inputSection}>
+              <View style={styles.inputHeader}>
+                <View style={[styles.inputBadge, { backgroundColor: themeColors.addedBorder }]}>
+                  <Text style={styles.inputBadgeText}>B</Text>
+                </View>
+                <Text style={[styles.inputTitle, { color: themeColors.text }]}>{t('compare.modifiedTitle')}</Text>
+                <View style={{ flexDirection: 'row', gap: Spacing.xs, alignItems: 'center' }}>
+                  <TouchableOpacity
+                    style={[styles.undoButton, { backgroundColor: themeColors.surfaceSecondary, borderColor: themeColors.border, opacity: canUndoModified ? 1 : 0.4 }]}
+                    onPress={undoModified}
+                    disabled={!canUndoModified}
+                  >
+                    <Ionicons name="arrow-undo" size={16} color={canUndoModified ? themeColors.primary : themeColors.textLight} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.undoButton, { backgroundColor: themeColors.surfaceSecondary, borderColor: themeColors.border, opacity: canRedoModified ? 1 : 0.4 }]}
+                    onPress={redoModified}
+                    disabled={!canRedoModified}
+                  >
+                    <Ionicons name="arrow-redo" size={16} color={canRedoModified ? themeColors.primary : themeColors.textLight} />
+                  </TouchableOpacity>
+                </View>
                 <TouchableOpacity
-                  style={[styles.undoButton, { backgroundColor: themeColors.surfaceSecondary, borderColor: themeColors.border, opacity: canUndoModified ? 1 : 0.4 }]}
-                  onPress={undoModified}
-                  disabled={!canUndoModified}
+                  style={[styles.pasteButton, { backgroundColor: themeColors.primary }]}
+                  onPress={async () => {
+                    const content = await Clipboard.getStringAsync();
+                    setModifiedText(content);
+                  }}
                 >
-                  <Ionicons name="arrow-undo" size={16} color={canUndoModified ? themeColors.primary : themeColors.textLight} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.undoButton, { backgroundColor: themeColors.surfaceSecondary, borderColor: themeColors.border, opacity: canRedoModified ? 1 : 0.4 }]}
-                  onPress={redoModified}
-                  disabled={!canRedoModified}
-                >
-                  <Ionicons name="arrow-redo" size={16} color={canRedoModified ? themeColors.primary : themeColors.textLight} />
+                  <Ionicons name="clipboard-outline" size={16} color="#FFFFFF" />
+                  <Text style={styles.pasteButtonText}>{t('compare.pasteText')}</Text>
                 </TouchableOpacity>
               </View>
-              <TouchableOpacity
-                style={[styles.pasteButton, { backgroundColor: themeColors.primary }]}
-                onPress={async () => {
-                  const content = await Clipboard.getStringAsync();
-                  setModifiedText(content);
-                }}
-              >
-                <Ionicons name="clipboard-outline" size={16} color="#FFFFFF" />
-                <Text style={styles.pasteButtonText}>{t('compare.pasteText')}</Text>
-              </TouchableOpacity>
+              <TextInput
+                style={[
+                  styles.textInput,
+                  {
+                    backgroundColor: themeColors.surface,
+                    color: themeColors.text,
+                    borderColor: activeInput === 'modified' ? themeColors.primary : themeColors.border,
+                    fontSize,
+                    minHeight: 150,
+                  },
+                ]}
+                value={modifiedText}
+                onChangeText={setModifiedText}
+                placeholder={t('compare.placeholderModified')}
+                placeholderTextColor={themeColors.textLight}
+                multiline
+                textAlignVertical="top"
+                onFocus={() => setActiveInput('modified')}
+              />
             </View>
-            <TextInput
-              style={[
-                styles.textInput,
-                {
-                  backgroundColor: themeColors.surface,
-                  color: themeColors.text,
-                  borderColor: activeInput === 'modified' ? themeColors.primary : themeColors.border,
-                  fontSize,
-                  minHeight: 150,
-                },
-              ]}
-              value={modifiedText}
-              onChangeText={setModifiedText}
-              placeholder={t('compare.placeholderModified')}
-              placeholderTextColor={themeColors.textLight}
-              multiline
-              textAlignVertical="top"
-              onFocus={() => setActiveInput('modified')}
-            />
-          </View>
+          </ScrollView>
 
           {/* Compare button */}
           <TouchableOpacity
-            style={[styles.compareButton, { backgroundColor: themeColors.primary }]}
+            style={[
+              styles.compareButton,
+              {
+                backgroundColor: themeColors.primary,
+                bottom: insets.bottom + Spacing.md + keyboardHeight,
+                opacity: 0.7
+              }
+            ]}
             onPress={handleCompare}
             activeOpacity={0.85}
           >
             <MaterialCommunityIcons name="file-compare" size={22} color="#FFFFFF" />
             <Text style={styles.compareButtonText}>{t('compare.compare')}</Text>
           </TouchableOpacity>
-        </ScrollView>
+        </View>
       ) : (
         <Animated.View style={[styles.resultContainer, { opacity: slideAnim, transform: [{ translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) }] }]}>
           {/* Stats summary */}
@@ -518,14 +548,21 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   compareButton: {
+    position: 'absolute',
+    alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: Spacing.md,
+    paddingVertical: Spacing.md,
+    paddingHorizontal: Spacing.xl,
     borderRadius: BorderRadius.lg,
     gap: Spacing.sm,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.xl,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    zIndex: 10,
   },
   compareButtonText: {
     color: '#FFFFFF',

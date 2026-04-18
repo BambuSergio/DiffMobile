@@ -11,6 +11,7 @@ import {
   Animated,
   Keyboard,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,7 +22,7 @@ import { useAppStore } from '../store/appStore';
 import { useTheme } from '../context/ThemeContext';
 import { computeDiff } from '../utils/diffEngine';
 import { FontSizes, BorderRadius, Spacing } from '../constants/theme';
-import DiffResultView from '../components/DiffResultView';
+import DiffResultView, { DiffResultViewRef } from '../components/DiffResultView';
 import * as LegacyFileSystem from 'expo-file-system/legacy';
 const { readAsStringAsync } = LegacyFileSystem;
 
@@ -30,6 +31,7 @@ export default function CompareScreen() {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { isDark, themeColors } = useTheme();
+  const { height: windowHeight } = useWindowDimensions();
 
   const originalText = useAppStore((state) => state.originalText);
   const modifiedText = useAppStore((state) => state.modifiedText);
@@ -40,6 +42,7 @@ export default function CompareScreen() {
   const ignoreCase = useAppStore((state) => state.ignoreCase);
   const ignoreEmptyLines = useAppStore((state) => state.ignoreEmptyLines);
   const flashMessage = useAppStore((state) => state.flashMessage);
+  const setFlashMessage = useAppStore((state) => state.setFlashMessage);
   const fontSizeMode = useAppStore((state) => state.fontSizeMode);
   const setOriginalText = useAppStore((state) => state.setOriginalText);
   const setModifiedText = useAppStore((state) => state.setModifiedText);
@@ -61,6 +64,7 @@ export default function CompareScreen() {
   const slideAnim = useRef(new Animated.Value(0)).current;
   const flashAnim = useRef(new Animated.Value(0)).current;
   const flashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const diffResultViewRef = useRef<DiffResultViewRef>(null);
 
   useEffect(() => {
     const showSubscription = Keyboard.addListener('keyboardDidShow', (e) => {
@@ -130,13 +134,19 @@ export default function CompareScreen() {
     setDiffResults(lines, stats);
     setShowResult(true);
 
+    const totalDifferences = stats.added + stats.removed + stats.modified;
+    if (totalDifferences === 0) {
+      setFlashMessage(t('compare.noDifferences'));
+      setTimeout(() => setFlashMessage(null), 2500);
+    }
+
     Animated.spring(slideAnim, {
       toValue: 1,
       useNativeDriver: true,
       tension: 50,
       friction: 7,
     }).start();
-  }, [originalText, modifiedText, ignoreWhitespace, ignoreCase, ignoreEmptyLines, setDiffResults, slideAnim, t]);
+  }, [originalText, modifiedText, ignoreWhitespace, ignoreCase, ignoreEmptyLines, setDiffResults, slideAnim, t, setFlashMessage]);
 
   const handleLoadFile = async (target: 'original' | 'modified') => {
     try {
@@ -296,6 +306,7 @@ export default function CompareScreen() {
                     borderColor: activeInput === 'original' ? themeColors.primary : themeColors.border,
                     fontSize,
                     minHeight: 150,
+                    maxHeight: Math.max(150, windowHeight * 0.25),
                   },
                 ]}
                 value={originalText}
@@ -351,6 +362,7 @@ export default function CompareScreen() {
                     borderColor: activeInput === 'modified' ? themeColors.primary : themeColors.border,
                     fontSize,
                     minHeight: 150,
+                    maxHeight: Math.max(150, windowHeight * 0.25),
                   },
                 ]}
                 value={modifiedText}
@@ -370,7 +382,7 @@ export default function CompareScreen() {
               styles.compareButton,
               {
                 backgroundColor: themeColors.primary,
-                bottom: insets.bottom + Spacing.md + keyboardHeight,
+                bottom: keyboardHeight > 0 ? keyboardHeight + Spacing.sm : insets.bottom + Spacing.md,
                 opacity: 0.7
               }
             ]}
@@ -398,16 +410,20 @@ export default function CompareScreen() {
                 <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>{t('compare.removedLines')}</Text>
               </View>
               <View style={styles.statDivider} />
-              <View style={styles.statItem}>
+              <TouchableOpacity 
+                style={styles.statItem}
+                onPress={() => diffResultViewRef.current?.scrollToFirstModified()}
+              >
                 <View style={[styles.statDot, { backgroundColor: themeColors.modifiedBorder }]} />
                 <Text style={[styles.statValue, { color: themeColors.text }]}>{diffStats?.modified}</Text>
                 <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>{t('compare.modifiedLines')}</Text>
-              </View>
+              </TouchableOpacity>
             </View>
           )}
 
           {/* Diff result */}
           <DiffResultView
+            ref={diffResultViewRef}
             lines={diffLines}
             fontSize={fontSize}
             themeColors={themeColors}
@@ -435,7 +451,7 @@ export default function CompareScreen() {
             styles.flashContainer,
             {
               opacity: flashAnim,
-              backgroundColor: themeColors.primary,
+              backgroundColor: themeColors.success,
             },
           ]}
           pointerEvents="none"
@@ -617,14 +633,20 @@ const styles = StyleSheet.create({
   },
   flashContainer: {
     position: 'absolute',
-    bottom: 100,
-    left: Spacing.md,
-    right: Spacing.md,
+    top: '50%',
+    left: '20%',
+    right: '20%',
+    transform: [{ translateY: -25 }],
     padding: Spacing.md,
     borderRadius: BorderRadius.md,
     alignItems: 'center',
+    justifyContent: 'center',
     zIndex: 100,
     elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   flashText: {
     color: '#FFFFFF',

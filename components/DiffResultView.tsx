@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef, useImperativeHandle, useRef } from 'react';
 import {
   View,
   Text,
@@ -25,7 +25,11 @@ interface DiffResultViewProps {
   isDark: boolean;
 }
 
-const DiffResultView: React.FC<DiffResultViewProps> = ({ lines, fontSize, themeColors, isDark }) => {
+export interface DiffResultViewRef {
+  scrollToFirstModified: () => void;
+}
+
+const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lines, fontSize, themeColors, isDark }, ref) => {
   const { t } = useTranslation();
   const [expandedLines, setExpandedLines] = useState<Set<number>>(new Set());
   const originalText = useAppStore((state) => state.originalText);
@@ -33,6 +37,19 @@ const DiffResultView: React.FC<DiffResultViewProps> = ({ lines, fontSize, themeC
   const setOriginalText = useAppStore((state) => state.setOriginalText);
   const setModifiedText = useAppStore((state) => state.setModifiedText);
   const setFlashMessage = useAppStore((state) => state.setFlashMessage);
+  
+  const scrollViewRef = useRef<ScrollView>(null);
+  const linePositions = useRef<{ [key: number]: number }>({});
+
+  useImperativeHandle(ref, () => ({
+    scrollToFirstModified: () => {
+      const firstModifiedIndex = lines.findIndex(line => line.type === 'modified' || line.type === 'added' || line.type === 'removed');
+      if (firstModifiedIndex !== -1 && scrollViewRef.current) {
+        const yPos = linePositions.current[firstModifiedIndex] || (firstModifiedIndex * 30); // Fallback estimate
+        scrollViewRef.current.scrollTo({ y: yPos, animated: true });
+      }
+    }
+  }));
 
   const renderCharDiffs = (charDiffs: CharDiff[], isUp: boolean) => {
     return charDiffs.map((cd, idx) => {
@@ -167,7 +184,7 @@ const DiffResultView: React.FC<DiffResultViewProps> = ({ lines, fontSize, themeC
     }
     
     setFlashMessage(t('compare.textSentUp'));
-    setTimeout(() => setFlashMessage(null), 2000);
+    setTimeout(() => setFlashMessage(null), 2500);
   };
 
   const handleSendLineDown = (index: number, text: string) => {
@@ -201,7 +218,7 @@ const DiffResultView: React.FC<DiffResultViewProps> = ({ lines, fontSize, themeC
     }
     
     setFlashMessage(t('compare.textSentDown'));
-    setTimeout(() => setFlashMessage(null), 2000);
+    setTimeout(() => setFlashMessage(null), 2500);
   };
 
   const toggleLine = (index: number) => {
@@ -280,7 +297,7 @@ const DiffResultView: React.FC<DiffResultViewProps> = ({ lines, fontSize, themeC
       </View>
 
       {/* Diff lines */}
-      <ScrollView style={styles.diffScroll} contentContainerStyle={styles.diffContent}>
+      <ScrollView style={styles.diffScroll} contentContainerStyle={styles.diffContent} ref={scrollViewRef}>
         {lines.length === 0 && (
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="check-circle-outline" size={48} color={themeColors.success} />
@@ -289,7 +306,14 @@ const DiffResultView: React.FC<DiffResultViewProps> = ({ lines, fontSize, themeC
         )}
 
         {lines.map((line, index) => (
-          <View key={index} style={styles.lineWrapper}>
+          <View 
+            key={index} 
+            style={styles.lineWrapper}
+            onLayout={(event) => {
+              const layout = event.nativeEvent.layout;
+              linePositions.current[index] = layout.y;
+            }}
+          >
             {line.type === 'equal' && line.left && (
               <TouchableOpacity
                 style={[styles.lineRow, { backgroundColor: themeColors.surface }]}
@@ -393,7 +417,9 @@ const DiffResultView: React.FC<DiffResultViewProps> = ({ lines, fontSize, themeC
       </ScrollView>
     </View>
   );
-};
+});
+
+DiffResultView.displayName = 'DiffResultView';
 
 const styles = StyleSheet.create({
   container: {

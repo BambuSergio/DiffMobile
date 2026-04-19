@@ -66,6 +66,7 @@ export default function CompareScreen() {
   const [selectionColorModified, setSelectionColorModified] = useState<string | undefined>(undefined);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [showScrollHint, setShowScrollHint] = useState(false);
+  const [compareButtonVisible, setCompareButtonVisible] = useState(true);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const flashAnim = useRef(new Animated.Value(0)).current;
   const scrollHintAnim = useRef(new Animated.Value(0)).current;
@@ -79,6 +80,7 @@ export default function CompareScreen() {
   const flashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const diffResultViewRef = useRef<DiffResultViewRef>(null);
   const hasShownScrollHint = useRef(false);
+  const compareButtonTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const showSubscription = Keyboard.addListener('keyboardDidShow', (e) => {
@@ -91,6 +93,9 @@ export default function CompareScreen() {
     return () => {
       showSubscription.remove();
       hideSubscription.remove();
+      if (compareButtonTimer.current) {
+        clearTimeout(compareButtonTimer.current);
+      }
     };
   }, []);
 
@@ -135,6 +140,18 @@ export default function CompareScreen() {
     b = Math.round(b + (255 - b) * percent);
     return `rgba(${r}, ${g}, ${b}, 0.8)`;
   };
+
+  const hideCompareButtonTemporarily = useCallback(() => {
+    if (compareButtonTimer.current) {
+      clearTimeout(compareButtonTimer.current);
+    }
+    
+    setCompareButtonVisible(false);
+    
+    compareButtonTimer.current = setTimeout(() => {
+      setCompareButtonVisible(true);
+    }, 1000);
+  }, []);
 
   const handleUndoOriginal = useCallback(() => {
     const oldText = originalText;
@@ -562,12 +579,19 @@ export default function CompareScreen() {
                   },
                 ]}
                 value={modifiedText}
-                onChangeText={setModifiedText}
+                onChangeText={(text) => {
+                  setModifiedText(text);
+                  hideCompareButtonTemporarily();
+                }}
                 placeholder={t('compare.placeholderModified')}
                 placeholderTextColor={themeColors.textLight}
                 multiline
                 textAlignVertical="top"
-                onFocus={() => setActiveInput('modified')}
+                onFocus={() => {
+                  setActiveInput('modified');
+                  hideCompareButtonTemporarily();
+                }}
+                onScroll={() => hideCompareButtonTemporarily()}
                 selection={selectionModified}
                 selectionColor={selectionColorModified}
                 onSelectionChange={(e) => {
@@ -580,21 +604,23 @@ export default function CompareScreen() {
           </ScrollView>
 
           {/* Compare button */}
-          <TouchableOpacity
-            style={[
-              styles.compareButton,
-              {
-                backgroundColor: themeColors.primary,
-                bottom: keyboardHeight > 0 ? keyboardHeight + Spacing.sm : insets.bottom + Spacing.md,
-                opacity: 0.7
-              }
-            ]}
-            onPress={handleCompare}
-            activeOpacity={0.85}
-          >
-            <MaterialCommunityIcons name="file-compare" size={22} color="#FFFFFF" />
-            <Text style={styles.compareButtonText}>{t('compare.compare')}</Text>
-          </TouchableOpacity>
+          {compareButtonVisible && (
+            <TouchableOpacity
+              style={[
+                styles.compareButton,
+                {
+                  backgroundColor: themeColors.primary,
+                  bottom: keyboardHeight > 0 ? keyboardHeight + Spacing.sm : insets.bottom + Spacing.md,
+                  opacity: 0.7
+                }
+              ]}
+              onPress={handleCompare}
+              activeOpacity={0.85}
+            >
+              <MaterialCommunityIcons name="file-compare" size={22} color="#FFFFFF" />
+              <Text style={styles.compareButtonText}>{t('compare.compare')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
       ) : (
         <Animated.View style={[styles.resultContainer, { opacity: slideAnim, transform: [{ translateY: slideAnim.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) }] }]}>

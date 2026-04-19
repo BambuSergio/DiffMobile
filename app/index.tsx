@@ -439,7 +439,7 @@ export default function CompareScreen() {
             }}
           >
             <Ionicons name="arrow-back-outline" size={18} color={themeColors.textSecondary} />
-            <Text style={[styles.backButtonText, { color: themeColors.textSecondary }]}>{t('compare.compare')}</Text>
+            <Text style={[styles.backButtonText, { color: themeColors.textSecondary }]}>{t('compare.back')}</Text>
           </TouchableOpacity>
         </Animated.View>
       )}
@@ -652,5 +652,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '700',
+    textAlign: 'center',
   },
 });

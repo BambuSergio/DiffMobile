@@ -60,11 +60,21 @@ export default function CompareScreen() {
 
   const [showResult, setShowResult] = useState(false);
   const [activeInput, setActiveInput] = useState<'original' | 'modified' | null>(null);
+  const [selectionOriginal, setSelectionOriginal] = useState({ start: 0, end: 0 });
+  const [selectionModified, setSelectionModified] = useState({ start: 0, end: 0 });
+  const [selectionColorOriginal, setSelectionColorOriginal] = useState<string | undefined>(undefined);
+  const [selectionColorModified, setSelectionColorModified] = useState<string | undefined>(undefined);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [showScrollHint, setShowScrollHint] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const flashAnim = useRef(new Animated.Value(0)).current;
   const scrollHintAnim = useRef(new Animated.Value(0)).current;
+  const originalInputRef = useRef<TextInput>(null);
+  const modifiedInputRef = useRef<TextInput>(null);
+  const highlightTimerOriginal = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const highlightTimerModified = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const blinkIntervalOriginal = useRef<ReturnType<typeof setInterval> | null>(null);
+  const blinkIntervalModified = useRef<ReturnType<typeof setInterval> | null>(null);
   const scrollHintTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const diffResultViewRef = useRef<DiffResultViewRef>(null);
@@ -85,6 +95,122 @@ export default function CompareScreen() {
   }, []);
 
   const fontSize = FontSizes[fontSizeMode];
+
+  const findDifferenceRange = (text1: string, text2: string) => {
+    let start = 0;
+    const len1 = text1.length;
+    const len2 = text2.length;
+    const minLen = Math.min(len1, len2);
+    while (start < minLen && text1[start] === text2[start]) {
+      start++;
+    }
+    let end1 = len1 - 1;
+    let end2 = len2 - 1;
+    while (end1 >= start && end2 >= start && text1[end1] === text2[end2]) {
+      end1--;
+      end2--;
+    }
+    return { start, end: end2 + 1 };
+  };
+
+  const expandToWordBoundaries = (text: string, start: number, end: number) => {
+    let expandedStart = start;
+    while (expandedStart > 0 && !/\s/.test(text[expandedStart - 1])) {
+      expandedStart--;
+    }
+    let expandedEnd = end;
+    while (expandedEnd < text.length && !/\s/.test(text[expandedEnd])) {
+      expandedEnd++;
+    }
+    return { start: expandedStart, end: expandedEnd };
+  };
+
+  const lightenColor = (color: string, percent: number) => {
+    const hex = color.replace('#', '');
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+    r = Math.round(r + (255 - r) * percent);
+    g = Math.round(g + (255 - g) * percent);
+    b = Math.round(b + (255 - b) * percent);
+    return `rgba(${r}, ${g}, ${b}, 0.8)`;
+  };
+
+  const handleUndoOriginal = useCallback(() => {
+    const oldText = originalText;
+    undoOriginal();
+    const newText = useAppStore.getState().originalText;
+    const range = findDifferenceRange(oldText, newText);
+    const { start, end } = expandToWordBoundaries(newText, range.start, range.end);
+    
+    if (highlightTimerOriginal.current) clearTimeout(highlightTimerOriginal.current);
+
+    setSelectionOriginal({ start, end });
+    setSelectionColorOriginal(lightenColor(themeColors.primary, 0.3));
+    originalInputRef.current?.focus();
+
+    highlightTimerOriginal.current = setTimeout(() => {
+      setSelectionColorOriginal(undefined);
+      setSelectionOriginal({ start: end, end });
+    }, 600);
+  }, [originalText, undoOriginal, themeColors.primary]);
+
+  const handleRedoOriginal = useCallback(() => {
+    const oldText = originalText;
+    redoOriginal();
+    const newText = useAppStore.getState().originalText;
+    const range = findDifferenceRange(oldText, newText);
+    const { start, end } = expandToWordBoundaries(newText, range.start, range.end);
+    
+    if (highlightTimerOriginal.current) clearTimeout(highlightTimerOriginal.current);
+
+    setSelectionOriginal({ start, end });
+    setSelectionColorOriginal(lightenColor(themeColors.primary, 0.3));
+    originalInputRef.current?.focus();
+
+    highlightTimerOriginal.current = setTimeout(() => {
+      setSelectionColorOriginal(undefined);
+      setSelectionOriginal({ start: end, end });
+    }, 600);
+  }, [originalText, redoOriginal, themeColors.primary]);
+
+  const handleUndoModified = useCallback(() => {
+    const oldText = modifiedText;
+    undoModified();
+    const newText = useAppStore.getState().modifiedText;
+    const range = findDifferenceRange(oldText, newText);
+    const { start, end } = expandToWordBoundaries(newText, range.start, range.end);
+    
+    if (highlightTimerModified.current) clearTimeout(highlightTimerModified.current);
+
+    setSelectionModified({ start, end });
+    setSelectionColorModified(lightenColor(themeColors.primary, 0.3));
+    modifiedInputRef.current?.focus();
+
+    highlightTimerModified.current = setTimeout(() => {
+      setSelectionColorModified(undefined);
+      setSelectionModified({ start: end, end });
+    }, 600);
+  }, [modifiedText, undoModified, themeColors.primary]);
+
+  const handleRedoModified = useCallback(() => {
+    const oldText = modifiedText;
+    redoModified();
+    const newText = useAppStore.getState().modifiedText;
+    const range = findDifferenceRange(oldText, newText);
+    const { start, end } = expandToWordBoundaries(newText, range.start, range.end);
+    
+    if (highlightTimerModified.current) clearTimeout(highlightTimerModified.current);
+
+    setSelectionModified({ start, end });
+    setSelectionColorModified(lightenColor(themeColors.primary, 0.3));
+    modifiedInputRef.current?.focus();
+
+    highlightTimerModified.current = setTimeout(() => {
+      setSelectionColorModified(undefined);
+      setSelectionModified({ start: end, end });
+    }, 600);
+  }, [modifiedText, redoModified, themeColors.primary]);
 
   // Flash message animation
   const toolbarScrollRef = useRef<ScrollView>(null);
@@ -334,14 +460,14 @@ export default function CompareScreen() {
                 <View style={{ flexDirection: 'row', gap: Spacing.xs, alignItems: 'center' }}>
                   <TouchableOpacity
                     style={[styles.undoButton, { backgroundColor: themeColors.surfaceSecondary, borderColor: themeColors.border, opacity: canUndoOriginal ? 1 : 0.4 }]}
-                    onPress={undoOriginal}
+                    onPress={handleUndoOriginal}
                     disabled={!canUndoOriginal}
                   >
                     <Ionicons name="arrow-undo" size={16} color={canUndoOriginal ? themeColors.primary : themeColors.textLight} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.undoButton, { backgroundColor: themeColors.surfaceSecondary, borderColor: themeColors.border, opacity: canRedoOriginal ? 1 : 0.4 }]}
-                    onPress={redoOriginal}
+                    onPress={handleRedoOriginal}
                     disabled={!canRedoOriginal}
                   >
                     <Ionicons name="arrow-redo" size={16} color={canRedoOriginal ? themeColors.primary : themeColors.textLight} />
@@ -359,6 +485,7 @@ export default function CompareScreen() {
                 </TouchableOpacity>
               </View>
               <TextInput
+                ref={originalInputRef}
                 style={[
                   styles.textInput,
                   {
@@ -377,6 +504,13 @@ export default function CompareScreen() {
                 multiline
                 textAlignVertical="top"
                 onFocus={() => setActiveInput('original')}
+                selection={selectionOriginal}
+                selectionColor={selectionColorOriginal}
+                onSelectionChange={(e) => {
+                  if (highlightTimerOriginal.current) clearTimeout(highlightTimerOriginal.current);
+                  setSelectionColorOriginal(undefined);
+                  setSelectionOriginal(e.nativeEvent.selection);
+                }}
               />
             </View>
 
@@ -390,14 +524,14 @@ export default function CompareScreen() {
                 <View style={{ flexDirection: 'row', gap: Spacing.xs, alignItems: 'center' }}>
                   <TouchableOpacity
                     style={[styles.undoButton, { backgroundColor: themeColors.surfaceSecondary, borderColor: themeColors.border, opacity: canUndoModified ? 1 : 0.4 }]}
-                    onPress={undoModified}
+                    onPress={handleUndoModified}
                     disabled={!canUndoModified}
                   >
                     <Ionicons name="arrow-undo" size={16} color={canUndoModified ? themeColors.primary : themeColors.textLight} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[styles.undoButton, { backgroundColor: themeColors.surfaceSecondary, borderColor: themeColors.border, opacity: canRedoModified ? 1 : 0.4 }]}
-                    onPress={redoModified}
+                    onPress={handleRedoModified}
                     disabled={!canRedoModified}
                   >
                     <Ionicons name="arrow-redo" size={16} color={canRedoModified ? themeColors.primary : themeColors.textLight} />
@@ -415,6 +549,7 @@ export default function CompareScreen() {
                 </TouchableOpacity>
               </View>
               <TextInput
+                ref={modifiedInputRef}
                 style={[
                   styles.textInput,
                   {
@@ -433,6 +568,13 @@ export default function CompareScreen() {
                 multiline
                 textAlignVertical="top"
                 onFocus={() => setActiveInput('modified')}
+                selection={selectionModified}
+                selectionColor={selectionColorModified}
+                onSelectionChange={(e) => {
+                  if (highlightTimerModified.current) clearTimeout(highlightTimerModified.current);
+                  setSelectionColorModified(undefined);
+                  setSelectionModified(e.nativeEvent.selection);
+                }}
               />
             </View>
           </ScrollView>

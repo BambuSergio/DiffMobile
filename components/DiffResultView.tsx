@@ -1,4 +1,4 @@
-import React, { useState, forwardRef, useImperativeHandle, useRef } from 'react';
+import React, { useState, forwardRef, useImperativeHandle, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -23,13 +23,14 @@ interface DiffResultViewProps {
   fontSize: number;
   themeColors: Record<string, string>;
   isDark: boolean;
+  onScrollStateChange?: (state: { isFirstDifferenceVisible: boolean; hasDifferencesBelow: boolean }) => void;
 }
 
 export interface DiffResultViewRef {
   scrollToFirstModified: () => void;
 }
 
-const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lines, fontSize, themeColors, isDark }, ref) => {
+const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lines, fontSize, themeColors, isDark, onScrollStateChange }, ref) => {
   const { t } = useTranslation();
   const [expandedLines, setExpandedLines] = useState<Set<number>>(new Set());
   const originalText = useAppStore((state) => state.originalText);
@@ -37,15 +38,29 @@ const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lin
   const setOriginalText = useAppStore((state) => state.setOriginalText);
   const setModifiedText = useAppStore((state) => state.setModifiedText);
   const setFlashMessage = useAppStore((state) => state.setFlashMessage);
-  
+
   const scrollViewRef = useRef<ScrollView>(null);
   const linePositions = useRef<{ [key: number]: number }>({});
+  const firstModifiedIndex = lines.findIndex(line => line.type === 'modified' || line.type === 'added' || line.type === 'removed');
+
+  // Report scroll state to parent
+  const reportScrollState = useCallback((scrollY: number, viewHeight: number, totalContentHeight: number) => {
+    if (firstModifiedIndex === -1) {
+      onScrollStateChange?.({ isFirstDifferenceVisible: true, hasDifferencesBelow: false });
+      return;
+    }
+
+    const firstDiffY = linePositions.current[firstModifiedIndex] ?? firstModifiedIndex * 30;
+    const isFirstVisible = firstDiffY >= scrollY && firstDiffY <= scrollY + viewHeight - 50;
+    const hasBelow = totalContentHeight > viewHeight && firstDiffY > scrollY + viewHeight - 50;
+
+    onScrollStateChange?.({ isFirstDifferenceVisible: isFirstVisible, hasDifferencesBelow: hasBelow });
+  }, [firstModifiedIndex, onScrollStateChange]);
 
   useImperativeHandle(ref, () => ({
     scrollToFirstModified: () => {
-      const firstModifiedIndex = lines.findIndex(line => line.type === 'modified' || line.type === 'added' || line.type === 'removed');
       if (firstModifiedIndex !== -1 && scrollViewRef.current) {
-        const yPos = linePositions.current[firstModifiedIndex] || (firstModifiedIndex * 30); // Fallback estimate
+        const yPos = linePositions.current[firstModifiedIndex] || (firstModifiedIndex * 30);
         scrollViewRef.current.scrollTo({ y: yPos, animated: true });
       }
     }
@@ -297,7 +312,43 @@ const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lin
       </View>
 
       {/* Diff lines */}
-      <ScrollView style={styles.diffScroll} contentContainerStyle={styles.diffContent} ref={scrollViewRef}>
+      <ScrollView
+        style={styles.diffScroll}
+        contentContainerStyle={styles.diffContent}
+        ref={scrollViewRef}
+        onScroll={(event) => {
+          const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+          // Check if first difference is below the visible area
+          if (firstModifiedIndex !== -1) {
+            const firstDiffY = linePositions.current[firstModifiedIndex] ?? firstModifiedIndex * 30;
+            const isBelow = firstDiffY > contentOffset.y + layoutMeasurement.height - 50;
+            const contentExceeds = contentSize.height > layoutMeasurement.height;
+            onScrollStateChange?.({
+              isFirstDifferenceVisible: !isBelow && firstDiffY >= contentOffset.y,
+              hasDifferencesBelow: contentExceeds && isBelow
+            });
+          } else {
+            onScrollStateChange?.({ isFirstDifferenceVisible: true, hasDifferencesBelow: false });
+          }
+        }}
+        scrollEventThrottle={100}
+        onContentSizeChange={(width, height) => {
+          // Initial check after content size is known
+          if (firstModifiedIndex !== -1) {
+            const firstDiffY = linePositions.current[firstModifiedIndex] ?? firstModifiedIndex * 30;
+            scrollViewRef.current?.measure((x, y, w, viewHeight) => {
+              if (viewHeight > 0) {
+                const isBelow = firstDiffY > viewHeight - 50;
+                const contentExceeds = height > viewHeight;
+                onScrollStateChange?.({
+                  isFirstDifferenceVisible: !isBelow,
+                  hasDifferencesBelow: contentExceeds && isBelow
+                });
+              }
+            });
+          }
+        }}
+      >
         {lines.length === 0 && (
           <View style={styles.emptyState}>
             <MaterialCommunityIcons name="check-circle-outline" size={48} color={themeColors.success} />

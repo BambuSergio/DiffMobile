@@ -30,6 +30,7 @@
     "textSentDown": "Texto enviado abajo",
     "noDifferences": "NO SE ENCONTRARON DIFERENCIAS",
     "differencesFound": "{{count}} diferencia(s) encontrada(s)",
+    "scrollToFirstDifference": "Tocar aquí para ir a la primera diferencia",
     "placeholderOriginal": "Escribe, pega texto o carga un archivo..",
     "placeholderModified": "Escribe, pega texto o carga un archivo...",
     "fileSaved": "Archivo guardado correctamente",

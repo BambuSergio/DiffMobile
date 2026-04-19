@@ -30,6 +30,7 @@
     "textSentDown": "Text sent down",
     "noDifferences": "NO DIFFERENCES FOUND",
     "differencesFound": "{{count}} difference(s) found",
+    "scrollToFirstDifference": "Tap here to go to first difference",
     "placeholderOriginal": "Type, paste text, or upload a file...",
     "placeholderModified": "Type, paste text, or up     load a file...",
     "fileSaved": "File saved successfully",

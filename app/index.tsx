@@ -61,10 +61,14 @@ export default function CompareScreen() {
   const [showResult, setShowResult] = useState(false);
   const [activeInput, setActiveInput] = useState<'original' | 'modified' | null>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [showScrollHint, setShowScrollHint] = useState(false);
   const slideAnim = useRef(new Animated.Value(0)).current;
   const flashAnim = useRef(new Animated.Value(0)).current;
+  const scrollHintAnim = useRef(new Animated.Value(0)).current;
+  const scrollHintTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const diffResultViewRef = useRef<DiffResultViewRef>(null);
+  const hasShownScrollHint = useRef(false);
 
   useEffect(() => {
     const showSubscription = Keyboard.addListener('keyboardDidShow', (e) => {
@@ -131,6 +135,8 @@ export default function CompareScreen() {
       ignoreCase,
       ignoreEmptyLines,
     });
+    // Reset scroll hint flag for new comparison
+    hasShownScrollHint.current = false;
     setDiffResults(lines, stats);
     setShowResult(true);
 
@@ -175,6 +181,7 @@ export default function CompareScreen() {
     clearTexts();
     setShowResult(false);
     slideAnim.setValue(0);
+    hasShownScrollHint.current = false; // Reset hint flag when clearing
   };
 
   const handleSwap = () => {
@@ -190,6 +197,60 @@ export default function CompareScreen() {
   };
 
   const showSummary = diffStats !== null && diffStats.total > 0;
+  const hasDifferences = diffStats !== null && diffStats.added + diffStats.removed + diffStats.modified > 0;
+
+  // Handle scroll state changes from DiffResultView - show flash notification for 3 seconds
+  const handleScrollStateChange = useCallback((state: { isFirstDifferenceVisible: boolean; hasDifferencesBelow: boolean }) => {
+    // Don't show hint if already shown once for this comparison
+    if (hasShownScrollHint.current) return;
+
+    const shouldShow = hasDifferences && state.hasDifferencesBelow && !state.isFirstDifferenceVisible;
+
+    if (shouldShow) {
+      hasShownScrollHint.current = true;
+
+      // Clear any existing timeout
+      if (scrollHintTimeout.current) {
+        clearTimeout(scrollHintTimeout.current);
+      }
+
+      // Reset and animate in
+      scrollHintAnim.setValue(0);
+      Animated.timing(scrollHintAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+
+      setShowScrollHint(true);
+
+      // Auto-hide after 3 seconds
+      scrollHintTimeout.current = setTimeout(() => {
+        Animated.timing(scrollHintAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowScrollHint(false);
+        });
+      }, 3000);
+    }
+  }, [hasDifferences, scrollHintAnim]);
+
+  const handleScrollHintPress = () => {
+    // Hide the hint when pressed
+    if (scrollHintTimeout.current) {
+      clearTimeout(scrollHintTimeout.current);
+    }
+    Animated.timing(scrollHintAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowScrollHint(false);
+    });
+    diffResultViewRef.current?.scrollToFirstModified();
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: themeColors.background }]}>
@@ -410,13 +471,35 @@ export default function CompareScreen() {
                 <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>{t('compare.removedLines')}</Text>
               </View>
               <View style={styles.statDivider} />
-              <TouchableOpacity 
-                style={styles.statItem}
+              <TouchableOpacity
+                style={[styles.statItem, { position: 'relative' }]}
                 onPress={() => diffResultViewRef.current?.scrollToFirstModified()}
               >
                 <View style={[styles.statDot, { backgroundColor: themeColors.modifiedBorder }]} />
                 <Text style={[styles.statValue, { color: themeColors.text }]}>{diffStats?.modified}</Text>
                 <Text style={[styles.statLabel, { color: themeColors.textSecondary }]}>{t('compare.modifiedLines')}</Text>
+
+                {/* Scroll hint flash notification - shown for 3 seconds */}
+                <Animated.View
+                  style={[
+                    styles.scrollHintFlash,
+                    {
+                      opacity: scrollHintAnim,
+                      backgroundColor: themeColors.modified,
+                    },
+                  ]}
+                  pointerEvents={showScrollHint ? 'auto' : 'none'}
+                >
+                  <TouchableOpacity
+                    style={styles.scrollHintButton}
+                    onPress={handleScrollHintPress}
+                  >
+                    <Ionicons name="arrow-down-circle" size={18} color={themeColors.modifiedBorder} />
+                    <Text style={[styles.scrollHintText, { color: themeColors.modifiedText }]}>
+                      {t('compare.scrollToFirstDifference')}
+                    </Text>
+                  </TouchableOpacity>
+                </Animated.View>
               </TouchableOpacity>
             </View>
           )}
@@ -428,6 +511,7 @@ export default function CompareScreen() {
             fontSize={fontSize}
             themeColors={themeColors}
             isDark={isDark}
+            onScrollStateChange={handleScrollStateChange}
           />
 
           {/* Back to edit */}
@@ -436,6 +520,7 @@ export default function CompareScreen() {
             onPress={() => {
               setShowResult(false);
               slideAnim.setValue(0);
+              hasShownScrollHint.current = false; // Reset hint flag when going back
             }}
           >
             <Ionicons name="arrow-back-outline" size={18} color={themeColors.textSecondary} />
@@ -616,6 +701,34 @@ const styles = StyleSheet.create({
   statDivider: {
     width: 1,
     backgroundColor: '#E9ECEF',
+  },
+  scrollHintFlash: {
+    position: 'absolute',
+    top: -6,
+    left: -6,
+    right: -6,
+    bottom: -6,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  scrollHintButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    gap: 6,
+  },
+  scrollHintText: {
+    fontSize: 10,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   backButton: {
     flexDirection: 'row',

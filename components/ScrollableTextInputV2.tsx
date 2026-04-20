@@ -164,6 +164,7 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
         onScroll={handleScroll}
         scrollEventThrottle={16}
         nestedScrollEnabled={true}
+        showsVerticalScrollIndicator={false} // Hide native scroll indicator
       >
         <TextInput
           ref={textInputRef}

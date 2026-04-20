@@ -336,16 +336,16 @@ const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lin
           // Initial check after content size is known
           if (firstModifiedIndex !== -1) {
             const firstDiffY = linePositions.current[firstModifiedIndex] ?? firstModifiedIndex * 30;
-            scrollViewRef.current?.measure((x, y, w, viewHeight) => {
-              if (viewHeight > 0) {
-                const isBelow = firstDiffY > viewHeight - 50;
-                const contentExceeds = height > viewHeight;
-                onScrollStateChange?.({
-                  isFirstDifferenceVisible: !isBelow,
-                  hasDifferencesBelow: contentExceeds && isBelow
-                });
-              }
-            });
+            // Use a reasonable estimate for view height (will be refined by scroll events)
+            const estimatedViewHeight = 500; // Typical screen height minus other UI elements
+            if (estimatedViewHeight > 0) {
+              const isBelow = firstDiffY > estimatedViewHeight - 50;
+              const contentExceeds = height > estimatedViewHeight;
+              onScrollStateChange?.({
+                isFirstDifferenceVisible: !isBelow,
+                hasDifferencesBelow: contentExceeds && isBelow
+              });
+            }
           }
         }}
       >

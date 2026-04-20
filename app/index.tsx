@@ -23,6 +23,7 @@ import { useTheme } from '../context/ThemeContext';
 import { computeDiff } from '../utils/diffEngine';
 import { FontSizes, BorderRadius, Spacing } from '../constants/theme';
 import DiffResultView, { DiffResultViewRef } from '../components/DiffResultView';
+import ScrollableTextInput from '../components/ScrollableTextInputV2';
 import * as LegacyFileSystem from 'expo-file-system/legacy';
 const { readAsStringAsync } = LegacyFileSystem;
 
@@ -70,8 +71,8 @@ export default function CompareScreen() {
   const slideAnim = useRef(new Animated.Value(0)).current;
   const flashAnim = useRef(new Animated.Value(0)).current;
   const scrollHintAnim = useRef(new Animated.Value(0)).current;
-  const originalInputRef = useRef<TextInput>(null);
-  const modifiedInputRef = useRef<TextInput>(null);
+  const originalInputRef = useRef<any>(null);
+  const modifiedInputRef = useRef<any>(null);
   const highlightTimerOriginal = useRef<ReturnType<typeof setTimeout> | null>(null);
   const highlightTimerModified = useRef<ReturnType<typeof setTimeout> | null>(null);
   const blinkIntervalOriginal = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -501,25 +502,13 @@ export default function CompareScreen() {
                   <Text style={styles.pasteButtonText}>{t('compare.pasteText')}</Text>
                 </TouchableOpacity>
               </View>
-              <TextInput
+              <ScrollableTextInput
                 ref={originalInputRef}
-                style={[
-                  styles.textInput,
-                  {
-                    backgroundColor: themeColors.surface,
-                    color: themeColors.text,
-                    borderColor: activeInput === 'original' ? themeColors.primary : themeColors.border,
-                    fontSize,
-                    minHeight: 150,
-                    maxHeight: Math.max(150, windowHeight * 0.25),
-                  },
-                ]}
+                themeColors={themeColors}
                 value={originalText}
                 onChangeText={setOriginalText}
                 placeholder={t('compare.placeholderOriginal')}
                 placeholderTextColor={themeColors.textLight}
-                multiline
-                textAlignVertical="top"
                 onFocus={() => setActiveInput('original')}
                 selection={selectionOriginal}
                 selectionColor={selectionColorOriginal}
@@ -528,6 +517,10 @@ export default function CompareScreen() {
                   setSelectionColorOriginal(undefined);
                   setSelectionOriginal(e.nativeEvent.selection);
                 }}
+                scrollbarColor={themeColors.primary}
+                minHeight={150}
+                maxHeight={Math.max(150, windowHeight * 0.25)}
+                fontSize={fontSize}
               />
             </View>
 
@@ -565,19 +558,9 @@ export default function CompareScreen() {
                   <Text style={styles.pasteButtonText}>{t('compare.pasteText')}</Text>
                 </TouchableOpacity>
               </View>
-              <TextInput
+              <ScrollableTextInput
                 ref={modifiedInputRef}
-                style={[
-                  styles.textInput,
-                  {
-                    backgroundColor: themeColors.surface,
-                    color: themeColors.text,
-                    borderColor: activeInput === 'modified' ? themeColors.primary : themeColors.border,
-                    fontSize,
-                    minHeight: 150,
-                    maxHeight: Math.max(150, windowHeight * 0.25),
-                  },
-                ]}
+                themeColors={themeColors}
                 value={modifiedText}
                 onChangeText={(text) => {
                   setModifiedText(text);
@@ -585,8 +568,6 @@ export default function CompareScreen() {
                 }}
                 placeholder={t('compare.placeholderModified')}
                 placeholderTextColor={themeColors.textLight}
-                multiline
-                textAlignVertical="top"
                 onFocus={() => {
                   setActiveInput('modified');
                   hideCompareButtonTemporarily();
@@ -599,6 +580,10 @@ export default function CompareScreen() {
                   setSelectionColorModified(undefined);
                   setSelectionModified(e.nativeEvent.selection);
                 }}
+                scrollbarColor={themeColors.primary}
+                minHeight={150}
+                maxHeight={Math.max(150, windowHeight * 0.25)}
+                fontSize={fontSize}
               />
             </View>
           </ScrollView>

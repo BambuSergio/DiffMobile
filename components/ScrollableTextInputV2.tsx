@@ -176,25 +176,31 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
     const isCursorPosition = e.nativeEvent.selection.start === e.nativeEvent.selection.end;
     
     if (isCursorPosition && cursorPosition !== undefined) {
-      const text = textInputProps.value?.toString() || '';
-      const lines = text.substring(0, cursorPosition).split('\n');
-      const lineNumber = lines.length - 1;
-      const lineHeight = fontSize * 1.4;
-      const cursorY = lineNumber * lineHeight;
-      
-      // Only scroll if cursor is outside visible area
-      const visibleAreaTop = scrollPosition;
-      const visibleAreaBottom = scrollPosition + containerHeight;
-      const buffer = lineHeight * 1.5; // 1.5 lines buffer
-      
-      if (cursorY > visibleAreaBottom - buffer) {
-        // Cursor is below visible area
-        const targetY = cursorY - containerHeight + lineHeight * 2;
-        scrollViewRef.current?.scrollTo({ y: Math.max(0, targetY), animated: true });
-      } else if (cursorY < visibleAreaTop + buffer) {
-        // Cursor is above visible area
-        scrollViewRef.current?.scrollTo({ y: Math.max(0, cursorY - lineHeight), animated: true });
-      }
+      // Add a small delay to let React Native's automatic scroll finish first
+      setTimeout(() => {
+        const text = textInputProps.value?.toString() || '';
+        const lines = text.substring(0, cursorPosition).split('\n');
+        const lineNumber = lines.length - 1;
+        const lineHeight = fontSize * 1.4;
+        const cursorY = lineNumber * lineHeight;
+        
+        // Only scroll if cursor is significantly outside visible area
+        // Use a larger buffer to avoid unnecessary scrolling
+        const visibleAreaTop = scrollPosition;
+        const visibleAreaBottom = scrollPosition + containerHeight;
+        const buffer = lineHeight * 3; // 3 lines buffer - more conservative
+        
+        if (cursorY > visibleAreaBottom + buffer) {
+          // Cursor is significantly below visible area
+          const targetY = cursorY - containerHeight + lineHeight * 2;
+          scrollViewRef.current?.scrollTo({ y: Math.max(0, targetY), animated: true });
+        } else if (cursorY < visibleAreaTop - buffer) {
+          // Cursor is significantly above visible area
+          scrollViewRef.current?.scrollTo({ y: Math.max(0, cursorY - lineHeight), animated: true });
+        }
+        // If cursor is within visible area (with generous buffer), don't scroll at all
+        // Let React Native handle it naturally
+      }, 50);
     }
   };
 

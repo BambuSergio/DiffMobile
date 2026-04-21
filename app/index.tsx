@@ -163,6 +163,9 @@ export default function CompareScreen() {
     
     if (highlightTimerOriginal.current) clearTimeout(highlightTimerOriginal.current);
 
+    // Mark this as an undo/redo operation so the scroll handler knows to act
+    originalInputRef.current?.markAsUndoRedoOperation();
+    
     setSelectionOriginal({ start, end });
     setSelectionColorOriginal(lightenColor(themeColors.primary, 0.3));
     originalInputRef.current?.focus();
@@ -182,6 +185,9 @@ export default function CompareScreen() {
     
     if (highlightTimerOriginal.current) clearTimeout(highlightTimerOriginal.current);
 
+    // Mark this as an undo/redo operation so the scroll handler knows to act
+    originalInputRef.current?.markAsUndoRedoOperation();
+    
     setSelectionOriginal({ start, end });
     setSelectionColorOriginal(lightenColor(themeColors.primary, 0.3));
     originalInputRef.current?.focus();
@@ -201,6 +207,9 @@ export default function CompareScreen() {
     
     if (highlightTimerModified.current) clearTimeout(highlightTimerModified.current);
 
+    // Mark this as an undo/redo operation so the scroll handler knows to act
+    modifiedInputRef.current?.markAsUndoRedoOperation();
+    
     setSelectionModified({ start, end });
     setSelectionColorModified(lightenColor(themeColors.primary, 0.3));
     modifiedInputRef.current?.focus();
@@ -220,6 +229,9 @@ export default function CompareScreen() {
     
     if (highlightTimerModified.current) clearTimeout(highlightTimerModified.current);
 
+    // Mark this as an undo/redo operation so the scroll handler knows to act
+    modifiedInputRef.current?.markAsUndoRedoOperation();
+    
     setSelectionModified({ start, end });
     setSelectionColorModified(lightenColor(themeColors.primary, 0.3));
     modifiedInputRef.current?.focus();

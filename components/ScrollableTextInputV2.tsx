@@ -15,6 +15,8 @@ interface ScrollableTextInputProps extends TextInputProps {
 export interface ScrollableTextInputRef {
   focus: () => void;
   scrollTo: (params: { y: number; animated?: boolean }) => void;
+  scrollToCursorPosition: (cursorPosition: number) => void;
+  markAsUndoRedoOperation: () => void;
 }
 
 const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextInputProps>(function ScrollableTextInputV2({
@@ -145,12 +147,97 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
     }
   }, [scrollPosition, contentHeight, containerHeight]);
   
+  // Handle selection change with smart detection
+  // We need to track if this is from an undo/redo operation
+  const lastSelectionRef = useRef({ start: 0, end: 0 });
+  const isUndoRedoOperationRef = useRef(false);
+  
+  // Method to mark that the next selection change is from undo/redo
+  const markAsUndoRedoOperation = () => {
+    isUndoRedoOperationRef.current = true;
+    // Reset after a short delay
+    setTimeout(() => {
+      isUndoRedoOperationRef.current = false;
+    }, 100);
+  };
+  
+  const handleSelectionChange = (e: any) => {
+    if (textInputProps.onSelectionChange) {
+      textInputProps.onSelectionChange(e);
+    }
+    
+    // Only handle scroll for undo/redo operations
+    if (!isUndoRedoOperationRef.current) {
+      // Not an undo/redo operation, don't interfere with user navigation
+      return;
+    }
+    
+    const cursorPosition = e.nativeEvent.selection.end;
+    const isCursorPosition = e.nativeEvent.selection.start === e.nativeEvent.selection.end;
+    
+    if (isCursorPosition && cursorPosition !== undefined) {
+      const text = textInputProps.value?.toString() || '';
+      const lines = text.substring(0, cursorPosition).split('\n');
+      const lineNumber = lines.length - 1;
+      const lineHeight = fontSize * 1.4;
+      const cursorY = lineNumber * lineHeight;
+      
+      // Only scroll if cursor is outside visible area
+      const visibleAreaTop = scrollPosition;
+      const visibleAreaBottom = scrollPosition + containerHeight;
+      const buffer = lineHeight * 1.5; // 1.5 lines buffer
+      
+      if (cursorY > visibleAreaBottom - buffer) {
+        // Cursor is below visible area
+        const targetY = cursorY - containerHeight + lineHeight * 2;
+        scrollViewRef.current?.scrollTo({ y: Math.max(0, targetY), animated: true });
+      } else if (cursorY < visibleAreaTop + buffer) {
+        // Cursor is above visible area
+        scrollViewRef.current?.scrollTo({ y: Math.max(0, cursorY - lineHeight), animated: true });
+      }
+    }
+  };
+
+  // Calculate scroll position based on cursor position
+  const scrollToCursorPosition = (cursorPosition: number) => {
+    if (!textInputRef.current) return;
+    
+    const text = textInputProps.value?.toString() || '';
+    const lines = text.substring(0, cursorPosition).split('\n');
+    const lineNumber = lines.length - 1;
+    const lineHeight = fontSize * 1.4; // Approximate line height
+    const cursorY = lineNumber * lineHeight;
+    
+    // Only scroll if cursor is WAY outside visible area
+    // Use a very large buffer to avoid ANY unnecessary scrolling
+    const visibleAreaTop = scrollPosition;
+    const visibleAreaBottom = scrollPosition + containerHeight;
+    const buffer = lineHeight * 5; // 5 lines buffer - very conservative
+    
+    if (cursorY > visibleAreaBottom + buffer) {
+      // Cursor is significantly below visible area - scroll to make it visible
+      const targetY = cursorY - containerHeight + lineHeight * 2;
+      scrollViewRef.current?.scrollTo({ y: Math.max(0, targetY), animated: true });
+    } else if (cursorY < visibleAreaTop - buffer) {
+      // Cursor is significantly above visible area - scroll to make it visible
+      scrollViewRef.current?.scrollTo({ y: Math.max(0, cursorY - lineHeight), animated: true });
+    }
+    // If cursor is anywhere near visible area, don't scroll at all
+    // Let React Native handle the scroll naturally
+  };
+
   useImperativeHandle(ref, () => ({
     focus: () => {
       textInputRef.current?.focus();
     },
     scrollTo: (params: { y: number; animated?: boolean }) => {
       scrollViewRef.current?.scrollTo(params);
+    },
+    scrollToCursorPosition: (cursorPosition: number) => {
+      scrollToCursorPosition(cursorPosition);
+    },
+    markAsUndoRedoOperation: () => {
+      markAsUndoRedoOperation();
     }
   }));
   
@@ -177,6 +264,7 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
           }]}
           multiline
           scrollEnabled={false} // Disable TextInput scrolling, use ScrollView instead
+          onSelectionChange={handleSelectionChange}
 
         />
       </ScrollView>

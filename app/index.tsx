@@ -518,7 +518,7 @@ export default function CompareScreen() {
                   setSelectionOriginal(e.nativeEvent.selection);
                 }}
                 scrollbarColor={themeColors.primary}
-                minHeight={150}
+                minHeight={Math.max(150, windowHeight * 0.2)}
                 maxHeight={Math.max(150, windowHeight * 0.25)}
                 fontSize={fontSize}
               />
@@ -581,7 +581,7 @@ export default function CompareScreen() {
                   setSelectionModified(e.nativeEvent.selection);
                 }}
                 scrollbarColor={themeColors.primary}
-                minHeight={150}
+                minHeight={Math.max(150, windowHeight * 0.2)}
                 maxHeight={Math.max(150, windowHeight * 0.25)}
                 fontSize={fontSize}
               />

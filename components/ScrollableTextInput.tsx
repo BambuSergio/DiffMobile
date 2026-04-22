@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { View, TextInput, TextInputProps, StyleSheet, PanResponder, Animated, TextInputContentSizeChangeEvent, NativeSyntheticEvent, TextInputScrollEventData } from 'react-native';
+import { View, TextInput, TextInputProps, StyleSheet, PanResponder, Animated, NativeSyntheticEvent, TextInputScrollEventData } from 'react-native';
 import { BorderRadius, Spacing } from '../constants/theme';
 
 interface ScrollableTextInputProps extends TextInputProps {
@@ -122,7 +122,7 @@ const ScrollableTextInput = forwardRef<ScrollableTextInputRef, ScrollableTextInp
       const scrollbarTop = (scrollPosition / scrollableContentHeight) * scrollbarAvailableHeight;
       scrollbarY.setValue(scrollbarTop);
     }
-  }, [scrollPosition, contentHeight, containerHeight]);
+  }, [scrollPosition, contentHeight, containerHeight, scrollbarY]);
   
   useImperativeHandle(ref, () => ({
     focus: () => {

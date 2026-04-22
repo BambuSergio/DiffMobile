@@ -1,4 +1,4 @@
-import React, { useState, forwardRef, useImperativeHandle, useRef, useCallback } from 'react';
+import React, { useState, forwardRef, useImperativeHandle, useRef } from 'react';
 import {
   View,
   Text,
@@ -42,20 +42,6 @@ const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lin
   const scrollViewRef = useRef<ScrollView>(null);
   const linePositions = useRef<{ [key: number]: number }>({});
   const firstModifiedIndex = lines.findIndex(line => line.type === 'modified' || line.type === 'added' || line.type === 'removed');
-
-  // Report scroll state to parent
-  const reportScrollState = useCallback((scrollY: number, viewHeight: number, totalContentHeight: number) => {
-    if (firstModifiedIndex === -1) {
-      onScrollStateChange?.({ isFirstDifferenceVisible: true, hasDifferencesBelow: false });
-      return;
-    }
-
-    const firstDiffY = linePositions.current[firstModifiedIndex] ?? firstModifiedIndex * 30;
-    const isFirstVisible = firstDiffY >= scrollY && firstDiffY <= scrollY + viewHeight - 50;
-    const hasBelow = totalContentHeight > viewHeight && firstDiffY > scrollY + viewHeight - 50;
-
-    onScrollStateChange?.({ isFirstDifferenceVisible: isFirstVisible, hasDifferencesBelow: hasBelow });
-  }, [firstModifiedIndex, onScrollStateChange]);
 
   useImperativeHandle(ref, () => ({
     scrollToFirstModified: () => {

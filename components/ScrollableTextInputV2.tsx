@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { View, TextInput, TextInputProps, StyleSheet, PanResponder, Animated, ScrollView, NativeSyntheticEvent, NativeScrollEvent, TouchableWithoutFeedback, GestureResponderEvent } from 'react-native';
+import { View, TextInput, TextInputProps, StyleSheet, Animated, ScrollView, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
 import { BorderRadius, Spacing } from '../constants/theme';
 
 interface ScrollableTextInputProps extends TextInputProps {
@@ -47,9 +47,6 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
     if (contentHeight <= containerHeight) return;
     
     setIsScrolling(true);
-    const scrollbarContainerHeight = containerHeight - 8;
-    const scrollbarAvailableHeight = scrollbarContainerHeight - 40;
-    
     // Store the initial touch position and scroll position
     setTouchStartY(evt.nativeEvent.pageY);
     setScrollPositionAtStart(scrollPosition);
@@ -145,11 +142,10 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
       const scrollbarTop = scrollRatio * scrollbarAvailableHeight;
       scrollbarY.setValue(scrollbarTop);
     }
-  }, [scrollPosition, contentHeight, containerHeight]);
+  }, [scrollPosition, contentHeight, containerHeight, scrollbarY]);
   
   // Handle selection change with smart detection
   // We need to track if this is from an undo/redo operation
-  const lastSelectionRef = useRef({ start: 0, end: 0 });
   const isUndoRedoOperationRef = useRef(false);
   
   // Method to mark that the next selection change is from undo/redo

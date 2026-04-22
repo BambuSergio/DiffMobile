@@ -5,12 +5,10 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
   ScrollView,
   Alert,
   Animated,
   Keyboard,
-  Platform,
   useWindowDimensions,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -75,8 +73,6 @@ export default function CompareScreen() {
   const modifiedInputRef = useRef<any>(null);
   const highlightTimerOriginal = useRef<ReturnType<typeof setTimeout> | null>(null);
   const highlightTimerModified = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const blinkIntervalOriginal = useRef<ReturnType<typeof setInterval> | null>(null);
-  const blinkIntervalModified = useRef<ReturnType<typeof setInterval> | null>(null);
   const scrollHintTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const diffResultViewRef = useRef<DiffResultViewRef>(null);
@@ -247,16 +243,12 @@ export default function CompareScreen() {
   const [scrollX, setScrollX] = useState(0);
   const [showRightArrow, setShowRightArrow] = useState(true);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
-  const [contentWidth, setContentWidth] = useState(0);
-  const [layoutWidth, setLayoutWidth] = useState(0);
 
   const handleToolbarScroll = (event: any) => {
     const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
     setScrollX(contentOffset.x);
     setShowLeftArrow(contentOffset.x > 4);
     setShowRightArrow(contentOffset.x < contentSize.width - layoutMeasurement.width - 4);
-    setContentWidth(contentSize.width);
-    setLayoutWidth(layoutMeasurement.width);
   };
 
   const scrollToolbar = (direction: 'left' | 'right') => {

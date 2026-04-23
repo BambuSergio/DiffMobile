@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { Text, StyleSheet, SafeAreaView } from 'react-native';
 import ScrollableTextInput from './components/ScrollableTextInput';
 
 const TestScrollbar = () => {

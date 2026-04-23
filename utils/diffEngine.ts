@@ -1,5 +1,5 @@
 import { diffArrays, diffWords } from 'diff';
-import { DiffLine, DiffLineSide, CharDiff, DiffStats } from '../types/diff';
+import { DiffLine, CharDiff, DiffStats } from '../types/diff';
 
 interface WordChange {
   value: string;
@@ -162,36 +162,24 @@ export function applyChangesToOriginal(lines: DiffLine[], direction: 'left-to-ri
 }
 
 export function exportUnifiedDiff(original: string, modified: string, originalName = 'original', modifiedName = 'modified'): string {
-  const origLines = original.split('\n');
-  const modLines = modified.split('\n');
+  const origLines = original.split('\\n');
+  const modLines = modified.split('\\n');
   if (origLines[origLines.length - 1] === '') origLines.pop();
   if (modLines[modLines.length - 1] === '') modLines.pop();
 
   const changes = diffArrays(origLines, modLines) as ArrayChange<string>[];
-  let result = `--- ${originalName}\n+++ ${modifiedName}\n`;
-
-  let originalLine = 0;
-  let modifiedLine = 0;
+  let result = `--- ${originalName}\\n+++ ${modifiedName}\\n`;
 
   for (const change of changes) {
     const changeLines = change.value;
 
-    if (!change.added && !change.removed) {
-      originalLine += changeLines.length;
-      modifiedLine += changeLines.length;
-    } else if (change.removed) {
-      originalLine += changeLines.length;
-    } else if (change.added) {
-      modifiedLine += changeLines.length;
-    }
-
     for (const line of changeLines) {
       if (change.added) {
-        result += `+${line}\n`;
+        result += `+${line}\\n`;
       } else if (change.removed) {
-        result += `-${line}\n`;
+        result += `-${line}\\n`;
       } else {
-        result += ` ${line}\n`;
+        result += ` ${line}\\n`;
       }
     }
   }

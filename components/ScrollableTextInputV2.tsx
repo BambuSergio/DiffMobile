@@ -43,6 +43,19 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
   const [touchStartY, setTouchStartY] = useState(0);
   const [scrollPositionAtStart, setScrollPositionAtStart] = useState(0);
 
+  // Memoize frequently used values to avoid recalculations
+  const lineHeightRef = useRef(fontSize * 1.4);
+  useEffect(() => {
+    lineHeightRef.current = fontSize * 1.4;
+  }, [fontSize]);
+
+  const visibleAreaTopRef = useRef(scrollPosition);
+  const visibleAreaBottomRef = useRef(scrollPosition + containerHeight);
+  useEffect(() => {
+    visibleAreaTopRef.current = scrollPosition;
+    visibleAreaBottomRef.current = scrollPosition + containerHeight;
+  }, [scrollPosition, containerHeight]);
+
   // Memoizar funciones de manejo del scrollbar táctil para evitar recreaciones
   const handleScrollbarTouchStart = useCallback((evt: GestureResponderEvent) => {
     if (contentHeight <= containerHeight) return;
@@ -56,7 +69,7 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
       pageY: evt.nativeEvent.pageY,
       scrollPosition
     });
-  }, [contentHeight, containerHeight, scrollPosition]);
+  }, [contentHeight, containerHeight, scrollPosition]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleScrollbarTouchMove = useCallback((evt: GestureResponderEvent) => {
     if (!isScrolling || contentHeight <= containerHeight) return;
@@ -89,7 +102,7 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
     setScrollPosition(newScrollY);
     scrollbarY.setValue(scrollbarTop);
     scrollViewRef.current?.scrollTo({ y: newScrollY, animated: false });
-  }, [contentHeight, containerHeight, isScrolling, scrollPositionAtStart, scrollPosition, touchStartY]);
+  }, [contentHeight, containerHeight, isScrolling, scrollPositionAtStart, scrollPosition, touchStartY, scrollbarY, scrollbarHeight]);
 
   const handleScrollbarTouchEnd = useCallback(() => {
     setIsScrolling(false);
@@ -109,7 +122,7 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
     } else {
       setShowScrollbar(false);
     }
-  }, [containerHeight]);
+  }, [containerHeight, scrollbarHeight]);
 
   const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset } = event.nativeEvent;
@@ -125,7 +138,7 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
       const scrollbarTop = scrollRatio * scrollbarAvailableHeight;
       scrollbarY.setValue(scrollbarTop);
     }
-  }, [contentHeight, containerHeight]);
+  }, [contentHeight, containerHeight, scrollbarY]);
 
   const handleLayout = useCallback((event: any) => {
     const { height } = event.nativeEvent.layout;
@@ -143,7 +156,7 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
       const scrollbarTop = scrollRatio * scrollbarAvailableHeight;
       scrollbarY.setValue(scrollbarTop);
     }
-  }, [scrollPosition, contentHeight, containerHeight]);
+  }, [scrollPosition, contentHeight, containerHeight, scrollbarY]);
   
   // Handle selection change with smart detection
   // We need to track if this is from an undo/redo operation
@@ -178,28 +191,28 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
         const text = textInputProps.value?.toString() || '';
         const lines = text.substring(0, cursorPosition).split('\\n');
         const lineNumber = lines.length - 1;
-        const lineHeight = fontSize * 1.4;
-        const cursorY = lineNumber * lineHeight;
+        const lineHeightCalc = lineHeightRef.current;
+        const cursorY = lineNumber * lineHeightCalc;
 
         // Only scroll if cursor is significantly outside visible area
         // Use a larger buffer to avoid unnecessary scrolling
-        const visibleAreaTop = scrollPosition;
-        const visibleAreaBottom = scrollPosition + containerHeight;
-        const buffer = lineHeight * 3; // 3 lines buffer - more conservative
+        const visibleAreaTop = visibleAreaTopRef.current;
+        const visibleAreaBottom = visibleAreaBottomRef.current;
+        const buffer = lineHeightCalc * 3; // 3 lines buffer - more conservative
 
         if (cursorY > visibleAreaBottom + buffer) {
           // Cursor is significantly below visible area
-          const targetY = cursorY - containerHeight + lineHeight * 2;
+          const targetY = cursorY - containerHeight + lineHeightCalc * 2;
           scrollViewRef.current?.scrollTo({ y: Math.max(0, targetY), animated: true });
         } else if (cursorY < visibleAreaTop - buffer) {
           // Cursor is significantly above visible area
-          scrollViewRef.current?.scrollTo({ y: Math.max(0, cursorY - lineHeight), animated: true });
+          scrollViewRef.current?.scrollTo({ y: Math.max(0, cursorY - lineHeightCalc), animated: true });
         }
         // If cursor is within visible area (with generous buffer), don't scroll at all
         // Let React Native handle it naturally
       }, 50);
     }
-  }, [fontSize, scrollPosition, containerHeight, textInputProps.value, textInputProps.onSelectionChange, isUndoRedoOperationRef]);
+  }, [textInputProps.value, textInputProps.onSelectionChange, fontSize, scrollPosition, containerHeight, isUndoRedoOperationRef]);
 
   // Calculate scroll position based on cursor position
   const scrollToCursorPosition = useCallback((cursorPosition: number) => {
@@ -208,22 +221,22 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
     const text = textInputProps.value?.toString() || '';
     const lines = text.substring(0, cursorPosition).split('\\n');
     const lineNumber = lines.length - 1;
-    const lineHeight = fontSize * 1.4; // Approximate line height
-    const cursorY = lineNumber * lineHeight;
+    const lineHeightCalc = lineHeightRef.current;
+    const cursorY = lineNumber * lineHeightCalc;
 
     // Only scroll if cursor is WAY outside visible area
     // Use a very large buffer to avoid ANY unnecessary scrolling
-    const visibleAreaTop = scrollPosition;
-    const visibleAreaBottom = scrollPosition + containerHeight;
-    const buffer = lineHeight * 5; // 5 lines buffer - very conservative
+    const visibleAreaTop = visibleAreaTopRef.current;
+    const visibleAreaBottom = visibleAreaBottomRef.current;
+    const buffer = lineHeightCalc * 5; // 5 lines buffer - very conservative
 
     if (cursorY > visibleAreaBottom + buffer) {
       // Cursor is significantly below visible area - scroll to make it visible
-      const targetY = cursorY - containerHeight + lineHeight * 2;
+      const targetY = cursorY - containerHeight + lineHeightCalc * 2;
       scrollViewRef.current?.scrollTo({ y: Math.max(0, targetY), animated: true });
     } else if (cursorY < visibleAreaTop - buffer) {
       // Cursor is significantly above visible area - scroll to make it visible
-      scrollViewRef.current?.scrollTo({ y: Math.max(0, cursorY - lineHeight), animated: true });
+      scrollViewRef.current?.scrollTo({ y: Math.max(0, cursorY - lineHeightCalc), animated: true });
     }
     // If cursor is anywhere near visible area, don't scroll at all
     // Let React Native handle the scroll naturally
@@ -246,16 +259,16 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
   
   return (
     <View style={[styles.container, { minHeight, maxHeight }]} onLayout={handleLayout}>
-      <ScrollView
-        ref={scrollViewRef}
-        style={styles.scrollContainer}
-        contentContainerStyle={styles.contentContainer}
-        onContentSizeChange={handleContentSizeChange}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-        nestedScrollEnabled={true}
-        showsVerticalScrollIndicator={false} // Hide native scroll indicator
-      >
+        <ScrollView
+          ref={scrollViewRef}
+          style={styles.scrollContainer}
+          contentContainerStyle={styles.contentContainer}
+          onContentSizeChange={handleContentSizeChange}
+          onScroll={handleScroll}
+          scrollEventThrottle={32}
+          nestedScrollEnabled={true}
+          showsVerticalScrollIndicator={false} // Hide native scroll indicator
+        >
         <TextInput
           ref={textInputRef}
           {...textInputProps}

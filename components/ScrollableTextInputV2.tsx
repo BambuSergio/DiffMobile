@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { View, TextInput, TextInputProps, StyleSheet, Animated, ScrollView, NativeSyntheticEvent, NativeScrollEvent } from 'react-native';
+import { View, TextInput, TextInputProps, StyleSheet, Animated, ScrollView, NativeSyntheticEvent, NativeScrollEvent, GestureResponderEvent } from 'react-native';
 import { BorderRadius, Spacing } from '../constants/theme';
 
 interface ScrollableTextInputProps extends TextInputProps {

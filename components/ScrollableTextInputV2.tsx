@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { View, TextInput, TextInputProps, StyleSheet, Animated, ScrollView, NativeSyntheticEvent, NativeScrollEvent, GestureResponderEvent } from 'react-native';
 import { BorderRadius, Spacing } from '../constants/theme';
 
@@ -42,62 +42,63 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
   
   const [touchStartY, setTouchStartY] = useState(0);
   const [scrollPositionAtStart, setScrollPositionAtStart] = useState(0);
-  
-  const handleScrollbarTouchStart = (evt: GestureResponderEvent) => {
+
+  // Memoizar funciones de manejo del scrollbar táctil para evitar recreaciones
+  const handleScrollbarTouchStart = useCallback((evt: GestureResponderEvent) => {
     if (contentHeight <= containerHeight) return;
-    
+
     setIsScrolling(true);
     // Store the initial touch position and scroll position
     setTouchStartY(evt.nativeEvent.pageY);
     setScrollPositionAtStart(scrollPosition);
-    
-    console.log('Touch start:', { 
+
+    console.log('Touch start:', {
       pageY: evt.nativeEvent.pageY,
       scrollPosition
     });
-  };
-  
-  const handleScrollbarTouchMove = (evt: GestureResponderEvent) => {
+  }, [contentHeight, containerHeight, scrollPosition]);
+
+  const handleScrollbarTouchMove = useCallback((evt: GestureResponderEvent) => {
     if (!isScrolling || contentHeight <= containerHeight) return;
-    
+
     const scrollbarContainerHeight = containerHeight - 8;
     const scrollbarAvailableHeight = scrollbarContainerHeight - 40;
     const scrollableContentHeight = contentHeight - containerHeight;
-    
+
     // Calculate how much the finger has moved
     const touchCurrentY = evt.nativeEvent.pageY;
     const dy = touchCurrentY - touchStartY;
-    
+
     // Calculate the new scroll position based on the movement
     const scrollRatio = dy / scrollbarAvailableHeight;
     let newScrollY = scrollPositionAtStart + scrollRatio * scrollableContentHeight;
     newScrollY = Math.max(0, Math.min(newScrollY, scrollableContentHeight));
-    
+
     // Calculate the new scrollbar position
     const scrollbarTop = (newScrollY / scrollableContentHeight) * scrollbarAvailableHeight;
-    
-    console.log('Touch move:', { 
+
+    console.log('Touch move:', {
       touchCurrentY,
       dy,
       scrollRatio,
       newScrollY,
       scrollbarTop
     });
-    
+
     // Update state and scroll
     setScrollPosition(newScrollY);
     scrollbarY.setValue(scrollbarTop);
     scrollViewRef.current?.scrollTo({ y: newScrollY, animated: false });
-  };
-  
-  const handleScrollbarTouchEnd = () => {
+  }, [contentHeight, containerHeight, isScrolling, scrollPositionAtStart, scrollPosition, touchStartY]);
+
+  const handleScrollbarTouchEnd = useCallback(() => {
     setIsScrolling(false);
     console.log('Touch end');
-  };
+  }, []);
   
-  const handleContentSizeChange = (width: number, height: number) => {
+  const handleContentSizeChange = useCallback((width: number, height: number) => {
     setContentHeight(height);
-    
+
     if (height > containerHeight) {
       const ratio = containerHeight / height;
       const scrollbarContainerHeight = containerHeight - 8;
@@ -108,41 +109,41 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
     } else {
       setShowScrollbar(false);
     }
-  };
-  
-  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+  }, [containerHeight]);
+
+  const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset } = event.nativeEvent;
     setScrollPosition(contentOffset.y);
-    
+
     if (contentHeight > containerHeight) {
       const scrollableContentHeight = contentHeight - containerHeight;
       const scrollbarContainerHeight = containerHeight - 8;
       const scrollbarAvailableHeight = scrollbarContainerHeight - 40;
-      
+
       // Calculate scrollbar position based on scroll ratio
       const scrollRatio = contentOffset.y / scrollableContentHeight;
       const scrollbarTop = scrollRatio * scrollbarAvailableHeight;
       scrollbarY.setValue(scrollbarTop);
     }
-  };
-  
-  const handleLayout = (event: any) => {
+  }, [contentHeight, containerHeight]);
+
+  const handleLayout = useCallback((event: any) => {
     const { height } = event.nativeEvent.layout;
     setContainerHeight(height);
-  };
+  }, []);
   
   useEffect(() => {
     if (contentHeight > containerHeight && containerHeight > 0) {
       const scrollableContentHeight = contentHeight - containerHeight;
       const scrollbarContainerHeight = containerHeight - 8;
       const scrollbarAvailableHeight = scrollbarContainerHeight - 40;
-      
+
       // Calculate scrollbar position based on scroll ratio
       const scrollRatio = scrollPosition / scrollableContentHeight;
       const scrollbarTop = scrollRatio * scrollbarAvailableHeight;
       scrollbarY.setValue(scrollbarTop);
     }
-  }, [scrollPosition, contentHeight, containerHeight, scrollbarY]);
+  }, [scrollPosition, contentHeight, containerHeight]);
   
   // Handle selection change with smart detection
   // We need to track if this is from an undo/redo operation
@@ -157,35 +158,35 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
     }, 100);
   };
   
-  const handleSelectionChange = (e: any) => {
+  const handleSelectionChange = useCallback((e: any) => {
     if (textInputProps.onSelectionChange) {
       textInputProps.onSelectionChange(e);
     }
-    
+
     // Only handle scroll for undo/redo operations
     if (!isUndoRedoOperationRef.current) {
       // Not an undo/redo operation, don't interfere with user navigation
       return;
     }
-    
+
     const cursorPosition = e.nativeEvent.selection.end;
     const isCursorPosition = e.nativeEvent.selection.start === e.nativeEvent.selection.end;
-    
+
     if (isCursorPosition && cursorPosition !== undefined) {
       // Add a small delay to let React Native's automatic scroll finish first
       setTimeout(() => {
         const text = textInputProps.value?.toString() || '';
-        const lines = text.substring(0, cursorPosition).split('\n');
+        const lines = text.substring(0, cursorPosition).split('\\n');
         const lineNumber = lines.length - 1;
         const lineHeight = fontSize * 1.4;
         const cursorY = lineNumber * lineHeight;
-        
+
         // Only scroll if cursor is significantly outside visible area
         // Use a larger buffer to avoid unnecessary scrolling
         const visibleAreaTop = scrollPosition;
         const visibleAreaBottom = scrollPosition + containerHeight;
         const buffer = lineHeight * 3; // 3 lines buffer - more conservative
-        
+
         if (cursorY > visibleAreaBottom + buffer) {
           // Cursor is significantly below visible area
           const targetY = cursorY - containerHeight + lineHeight * 2;
@@ -198,24 +199,24 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
         // Let React Native handle it naturally
       }, 50);
     }
-  };
+  }, [fontSize, scrollPosition, containerHeight, textInputProps.value, textInputProps.onSelectionChange, isUndoRedoOperationRef]);
 
   // Calculate scroll position based on cursor position
-  const scrollToCursorPosition = (cursorPosition: number) => {
+  const scrollToCursorPosition = useCallback((cursorPosition: number) => {
     if (!textInputRef.current) return;
-    
+
     const text = textInputProps.value?.toString() || '';
-    const lines = text.substring(0, cursorPosition).split('\n');
+    const lines = text.substring(0, cursorPosition).split('\\n');
     const lineNumber = lines.length - 1;
     const lineHeight = fontSize * 1.4; // Approximate line height
     const cursorY = lineNumber * lineHeight;
-    
+
     // Only scroll if cursor is WAY outside visible area
     // Use a very large buffer to avoid ANY unnecessary scrolling
     const visibleAreaTop = scrollPosition;
     const visibleAreaBottom = scrollPosition + containerHeight;
     const buffer = lineHeight * 5; // 5 lines buffer - very conservative
-    
+
     if (cursorY > visibleAreaBottom + buffer) {
       // Cursor is significantly below visible area - scroll to make it visible
       const targetY = cursorY - containerHeight + lineHeight * 2;
@@ -226,7 +227,7 @@ const ScrollableTextInputV2 = forwardRef<ScrollableTextInputRef, ScrollableTextI
     }
     // If cursor is anywhere near visible area, don't scroll at all
     // Let React Native handle the scroll naturally
-  };
+  }, [fontSize, scrollPosition, containerHeight, textInputProps.value]);
 
   useImperativeHandle(ref, () => ({
     focus: () => {

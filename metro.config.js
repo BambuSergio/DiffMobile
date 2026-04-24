@@ -12,9 +12,9 @@ module.exports = (async () => {
     },
     // Explicitly define which folders to watch - only our source code
     watchFolders: [
-      '/data/data/com.termux/files/home/DiffMobile/app',
-      '/data/data/com.termux/files/home/DiffMobile/components',
-      '/data/data/com.termux/files/home/DiffMobile/constants',
+      './app',
+      './components',
+      './constants',
     ],
     // Explicitly exclude problematic directories
     watcher: {
@@ -22,8 +22,8 @@ module.exports = (async () => {
       watchNodeModules: false,
       // Additional exclusions for problematic TypeScript service directories
       excludedPaths: [
-        '/node_modules/@typescript-eslint/',
-        '/node_modules/@types/',
+        './node_modules/@typescript-eslint/',
+        './node_modules/@types/',
       ],
     },
     // Optimize for low watcher count

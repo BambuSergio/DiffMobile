@@ -355,6 +355,7 @@ const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lin
               <TouchableOpacity
                 style={[styles.lineRow, { backgroundColor: themeColors.surface }]}
                 onPress={() => toggleLine(index)}
+                activeOpacity={1}
               >
                 <View style={[styles.lineNumber, { backgroundColor: themeColors.surfaceSecondary }]}>
                   <Text style={[styles.lineNumberText, { color: themeColors.textLight }]}>{line.left.lineNumber}</Text>
@@ -368,6 +369,7 @@ const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lin
                 <TouchableOpacity
                   style={[styles.lineRow, { backgroundColor: themeColors.removed, flex: 1 }]}
                   onPress={() => handleCopyLine(line.left!.text)}
+                  activeOpacity={1}
                 >
                   <View style={[styles.lineNumber, { backgroundColor: themeColors.removedBorder }]}>
                     <Text style={[styles.lineNumberText, { color: '#FFFFFF' }]}>{line.left.lineNumber}</Text>
@@ -379,6 +381,7 @@ const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lin
                 <TouchableOpacity
                   style={[styles.sendButton, { backgroundColor: themeColors.removedBorder }]}
                   onPress={() => handleSendLineDown(index, line.left!.text)}
+                  activeOpacity={1}
                 >
                   <Ionicons name="arrow-down-outline" size={16} color="#FFFFFF" />
                 </TouchableOpacity>
@@ -390,6 +393,7 @@ const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lin
                 <TouchableOpacity
                   style={[styles.lineRow, { backgroundColor: themeColors.added, flex: 1 }]}
                   onPress={() => handleCopyLine(line.right!.text)}
+                  activeOpacity={1}
                 >
                   <View style={[styles.lineNumber, { backgroundColor: themeColors.addedBorder }]}>
                     <Text style={[styles.lineNumberText, { color: '#FFFFFF' }]}>{line.right.lineNumber}</Text>
@@ -401,6 +405,7 @@ const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lin
                 <TouchableOpacity
                   style={[styles.sendButton, { backgroundColor: themeColors.addedBorder }]}
                   onPress={() => handleSendLineUp(index, line.right!.text)}
+                  activeOpacity={1}
                 >
                   <Ionicons name="arrow-up-outline" size={16} color="#FFFFFF" />
                 </TouchableOpacity>
@@ -413,6 +418,7 @@ const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lin
                   <TouchableOpacity
                     style={[styles.lineRow, styles.lineRowModified, { backgroundColor: themeColors.modified, flex: 1 }]}
                     onPress={() => handleCopyLine(line.left!.text)}
+                    activeOpacity={1}
                   >
                     <View style={[styles.lineNumber, { backgroundColor: themeColors.modifiedBorder }]}>
                       <Text style={[styles.lineNumberText, { color: '#FFFFFF' }]}>{line.left.lineNumber}</Text>
@@ -424,6 +430,7 @@ const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lin
                   <TouchableOpacity
                     style={[styles.sendButton, { backgroundColor: themeColors.modifiedBorder }]}
                     onPress={() => handleSendLineDown(index, line.left!.text)}
+                    activeOpacity={1}
                   >
                     <Ionicons name="arrow-down-outline" size={14} color="#FFFFFF" />
                   </TouchableOpacity>
@@ -432,6 +439,7 @@ const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lin
                   <TouchableOpacity
                     style={[styles.lineRow, styles.lineRowModified, { backgroundColor: themeColors.added, borderTopWidth: 0.5, borderTopColor: themeColors.modifiedBorder, flex: 1 }]}
                     onPress={() => handleCopyLine(line.right!.text)}
+                    activeOpacity={1}
                   >
                     <View style={[styles.lineNumber, { backgroundColor: themeColors.addedBorder }]}>
                       <Text style={[styles.lineNumberText, { color: '#FFFFFF' }]}>{line.right.lineNumber}</Text>
@@ -443,6 +451,7 @@ const DiffResultView = forwardRef<DiffResultViewRef, DiffResultViewProps>(({ lin
                   <TouchableOpacity
                     style={[styles.sendButton, { backgroundColor: themeColors.addedBorder }]}
                     onPress={() => handleSendLineUp(index, line.right!.text)}
+                    activeOpacity={1}
                   >
                     <Ionicons name="arrow-up-outline" size={14} color="#FFFFFF" />
                   </TouchableOpacity>

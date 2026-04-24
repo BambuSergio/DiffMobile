@@ -1,4 +1,5 @@
 const { getDefaultConfig } = require('metro-config');
+const path = require('path');
 
 module.exports = (async () => {
   const {
@@ -12,9 +13,9 @@ module.exports = (async () => {
     },
     // Explicitly define which folders to watch - only our source code
     watchFolders: [
-      '/data/data/com.termux/files/home/DiffMobile/app',
-      '/data/data/com.termux/files/home/DiffMobile/components',
-      '/data/data/com.termux/files/home/DiffMobile/constants',
+      path.resolve(__dirname, 'app'),
+      path.resolve(__dirname, 'components'),
+      path.resolve(__dirname, 'constants'),
     ],
     // Explicitly exclude problematic directories
     watcher: {

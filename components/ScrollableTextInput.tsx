@@ -34,8 +34,8 @@ const ScrollableTextInput = forwardRef<ScrollableTextInputRef, ScrollableTextInp
   const [showScrollbar, setShowScrollbar] = useState(false);
   
   const textInputRef = useRef<TextInput>(null);
-  const scrollbarY = useRef(new Animated.Value(0)).current;
-  const scrollbarHeight = useRef(new Animated.Value(0)).current;
+  const scrollbarYRef = useRef(new Animated.Value(0));
+  const scrollbarHeightRef = useRef(new Animated.Value(0));
   
   const panResponder = useRef(
     PanResponder.create({
@@ -60,7 +60,7 @@ const ScrollableTextInput = forwardRef<ScrollableTextInputRef, ScrollableTextInp
         // Calculate scrollbar position (0 to scrollbarAvailableHeight)
         const scrollbarAvailableHeight = scrollbarContainerHeight - 40; // Minimum scrollbar height
         const scrollbarTop = (newY / scrollableContentHeight) * scrollbarAvailableHeight;
-        scrollbarY.setValue(scrollbarTop);
+        scrollbarYRef.current.setValue(scrollbarTop);
         
         if (textInputRef.current) {
           // @ts-ignore - scrollTo is available on TextInput
@@ -83,7 +83,7 @@ const ScrollableTextInput = forwardRef<ScrollableTextInputRef, ScrollableTextInp
       const ratio = containerHeight / height;
       const scrollbarContainerHeight = containerHeight - 8; // Account for padding
       const scrollbarH = Math.max(40, scrollbarContainerHeight * ratio);
-      scrollbarHeight.setValue(scrollbarH);
+      scrollbarHeightRef.current.setValue(scrollbarH);
       console.log('Showing scrollbar:', { ratio, scrollbarH, scrollbarContainerHeight });
       setShowScrollbar(true);
     } else {
@@ -104,7 +104,7 @@ const ScrollableTextInput = forwardRef<ScrollableTextInputRef, ScrollableTextInp
       const scrollbarAvailableHeight = scrollbarContainerHeight - 40; // Minimum scrollbar height
       const scrollbarTop = (contentOffset.y / scrollableContentHeight) * scrollbarAvailableHeight;
       console.log('Updating scrollbar position:', { scrollbarTop, scrollbarAvailableHeight });
-      scrollbarY.setValue(scrollbarTop);
+      scrollbarYRef.current.setValue(scrollbarTop);
     }
   };
   
@@ -120,9 +120,9 @@ const ScrollableTextInput = forwardRef<ScrollableTextInputRef, ScrollableTextInp
       const scrollbarContainerHeight = containerHeight - 8; // Account for padding
       const scrollbarAvailableHeight = scrollbarContainerHeight - 40; // Minimum scrollbar height
       const scrollbarTop = (scrollPosition / scrollableContentHeight) * scrollbarAvailableHeight;
-      scrollbarY.setValue(scrollbarTop);
+      scrollbarYRef.current.setValue(scrollbarTop);
     }
-  }, [scrollPosition, contentHeight, containerHeight, scrollbarY]);
+  }, [scrollPosition, contentHeight, containerHeight]);
   
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -164,8 +164,8 @@ const ScrollableTextInput = forwardRef<ScrollableTextInputRef, ScrollableTextInp
               styles.scrollbarThumb,
               {
                 width: scrollbarWidth,
-                height: scrollbarHeight,
-                transform: [{ translateY: scrollbarY }],
+                height: scrollbarHeightRef.current,
+                transform: [{ translateY: scrollbarYRef.current }],
                 backgroundColor: scrollbarColor,
                 opacity: isScrolling ? 1 : 0.8,
               }
